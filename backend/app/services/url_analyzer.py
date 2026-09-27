@@ -18,22 +18,71 @@ SUSPICIOUS_KEYWORDS = [
     "recharge", "suspend", "suspended", "restore", "reactivate", "alert", "notice"
 ]
 
-TARGET_BRANDS = {
-    "sbi": ["onlinesbi.sbi", "sbi.co.in", "statebankofindia.com"],
-    "hdfc": ["hdfcbank.com", "hdfc.com"],
-    "icici": ["icicibank.com"],
-    "axis": ["axisbank.com"],
-    "paytm": ["paytm.com"],
-    "phonepe": ["phonepe.com"],
-    "gpay": ["google.com", "pay.google.com"],
-    "google": ["google.com", "accounts.google.com"],
-    "apple": ["apple.com", "icloud.com"],
-    "microsoft": ["microsoft.com", "live.com", "office.com"],
-    "amazon": ["amazon.in", "amazon.com"],
-    "netflix": ["netflix.com"],
-    "paypal": ["paypal.com"],
-    "tneb": ["tnebltd.gov.in", "tangedco.gov.in"],
-    "indiapost": ["indiapost.gov.in"]
+# Official Domain Whitelist for Major Brands & Indian Financial Institutions
+TARGET_BRANDS: Dict[str, List[str]] = {
+    "sbi": [
+        "onlinesbi.sbi", "sbi.co.in", "sbi.sbi", "bank.sbi",
+        "statebankofindia.com", "sbi.bank.in", "onlinesbi.sbi.bank.in",
+        "retail.sbi.bank.in", "corporate.sbi.bank.in", "sbi-card.com", "sbicard.com"
+    ],
+    "hdfc": [
+        "hdfcbank.com", "hdfc.com", "hdfc.bank.in", "hdfcbank.bank.in",
+        "hdfcbank.net", "hdfcsec.com"
+    ],
+    "icici": [
+        "icicibank.com", "icici.com", "icici.bank.in", "icicidirect.com"
+    ],
+    "axis": [
+        "axisbank.com", "axis.bank.in"
+    ],
+    "pnb": [
+        "pnbindia.in", "pnb.bank.in"
+    ],
+    "canara": [
+        "canarabank.com", "canara.bank.in"
+    ],
+    "bankofbaroda": [
+        "bankofbaroda.in", "bankofbaroda.com", "bob.bank.in"
+    ],
+    "kotak": [
+        "kotak.com", "kotak.bank.in", "kotakcherry.com"
+    ],
+    "rbi": [
+        "rbi.org.in"
+    ],
+    "paytm": [
+        "paytm.com", "paytmbank.com", "paytm.bank.in"
+    ],
+    "phonepe": [
+        "phonepe.com"
+    ],
+    "gpay": [
+        "google.com", "pay.google.com"
+    ],
+    "google": [
+        "google.com", "google.co.in", "accounts.google.com", "myaccount.google.com"
+    ],
+    "apple": [
+        "apple.com", "icloud.com", "appleid.apple.com"
+    ],
+    "microsoft": [
+        "microsoft.com", "live.com", "office.com", "login.microsoftonline.com"
+    ],
+    "amazon": [
+        "amazon.in", "amazon.com"
+    ],
+    "netflix": [
+        "netflix.com"
+    ],
+    "paypal": [
+        "paypal.com"
+    ],
+    "tneb": [
+        "tnebltd.gov.in", "tangedco.gov.in", "tnebltd.com"
+    ],
+    "indiapost": [
+        "indiapost.gov.in", "ippbonline.com", "ippb.bank.in"
+    ]
 }
 
 # Seed list of known malicious threat intelligence feeds (URLhaus / PhishTank)
@@ -83,6 +132,30 @@ class URLAnalyzer:
         )
         self.hex_encoding_pattern = re.compile(r'%[0-9a-fA-F]{2}')
 
+    def check_official_domain(self, domain: str) -> Tuple[bool, Optional[str]]:
+        """
+        Checks if a domain belongs to a verified official brand or protected banking/gov namespace.
+        In India, '.bank.in' is exclusively allocated by IDRBT/RBI to licensed commercial banks.
+        '.gov.in' and '.nic.in' are exclusively allocated to Indian government organizations.
+        """
+        domain_clean = domain.lower()
+
+        # Check explicit brand whitelist
+        for brand, official_domains in TARGET_BRANDS.items():
+            for legit in official_domains:
+                if domain_clean == legit or domain_clean.endswith("." + legit):
+                    return True, brand.upper()
+
+        # Check protected official namespaces
+        if domain_clean.endswith(".bank.in"):
+            bank_name = domain_clean.split(".bank.in")[0].split(".")[-1]
+            return True, f"{bank_name.upper()} (Authorized .bank.in)"
+
+        if domain_clean.endswith(".gov.in") or domain_clean.endswith(".nic.in"):
+            return True, "Government of India (.gov.in)"
+
+        return False, None
+
     def analyze(self, raw_url: str) -> URLFeatureAnalysis:
         raw_url = raw_url.strip()
         if not raw_url.startswith(("http://", "https://")):
@@ -103,6 +176,9 @@ class URLAnalyzer:
         path = parsed.path.lower()
         query = parsed.query.lower()
 
+        # Check official domain status FIRST
+        is_official, official_brand = self.check_official_domain(domain)
+
         # 1. IP-based Host detection
         ip_based = bool(self.ip_pattern.match(full_url)) or bool(re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', domain))
 
@@ -121,71 +197,80 @@ class URLAnalyzer:
         has_double_slash = "//" in path
         has_hex_encoding = bool(self.hex_encoding_pattern.search(full_url))
 
-        # 5. Shannon Entropy (Random/DGA Domain Detection)
+        # 5. Shannon Entropy
         entropy = calculate_shannon_entropy(domain)
 
         # 6. Sensitive keywords
         found_keywords = [kw for kw in SUSPICIOUS_KEYWORDS if kw in full_url.lower()]
 
-        # 7. Brand Impersonation check
-        impersonated_brand, similarity_score = self._check_brand_impersonation(domain, full_url)
+        # 7. Brand Impersonation check (Only if domain is NOT verified official)
+        impersonated_brand = None
+        similarity_score = 0.0
+
+        if not is_official:
+            impersonated_brand, similarity_score = self._check_brand_impersonation(domain, full_url)
 
         # 8. Threat Signal Aggregation
         signals = []
         score = 0.0
 
-        if ip_based:
-            signals.append("URL uses raw IP address instead of domain hostname (bypasses DNS reputation)")
-            score += 35.0
+        # If verified official, grant trust immunity from structural false positives
+        if is_official:
+            signals.append(f"Verified Official Portal: Belongs to {official_brand} authorized domain registry")
+            base_risk_score = 0.0
+        else:
+            if ip_based:
+                signals.append("URL uses raw IP address instead of domain hostname (bypasses DNS reputation)")
+                score += 35.0
 
-        if has_at_symbol:
-            signals.append("URL contains '@' symbol to mislead user about target destination")
-            score += 30.0
+            if has_at_symbol:
+                signals.append("URL contains '@' symbol to mislead user about target destination")
+                score += 30.0
 
-        if has_double_slash:
-            signals.append("URL contains embedded double slashes ('//') in path used for redirection evasion")
-            score += 20.0
+            if has_double_slash:
+                signals.append("URL contains embedded double slashes ('//') in path used for redirection evasion")
+                score += 20.0
 
-        if has_hex_encoding:
-            signals.append("URL uses hex/percent encoding to obfuscate malicious path segments")
-            score += 15.0
+            if has_hex_encoding:
+                signals.append("URL uses hex/percent encoding to obfuscate malicious path segments")
+                score += 15.0
 
-        if suspicious_tld:
-            signals.append(f"Domain uses high-abuse top-level domain (.{tld}) commonly seen in throwaway phishing")
-            score += 20.0
+            if suspicious_tld:
+                signals.append(f"Domain uses high-abuse top-level domain (.{tld}) commonly seen in throwaway phishing")
+                score += 20.0
 
-        if len(full_url) > 75:
-            signals.append(f"Excessive URL length ({len(full_url)} characters) indicating token stuffing or cloaking")
-            score += 15.0
+            if len(full_url) > 75:
+                signals.append(f"Excessive URL length ({len(full_url)} characters) indicating token stuffing or cloaking")
+                score += 15.0
 
-        if subdomain_count >= 3:
-            signals.append(f"Unusually deep subdomain nesting ({subdomain_count} subdomains)")
-            score += 20.0
+            if subdomain_count >= 3:
+                signals.append(f"Unusually deep subdomain nesting ({subdomain_count} subdomains)")
+                score += 20.0
 
-        if entropy > 4.2:
-            signals.append(f"High Shannon entropy ({entropy}) indicating algorithmically generated domain name")
-            score += 18.0
+            if entropy > 4.2:
+                signals.append(f"High Shannon entropy ({entropy}) indicating algorithmically generated domain name")
+                score += 18.0
 
-        if port and port not in [80, 443]:
-            signals.append(f"URL uses non-standard network port (:{port})")
-            score += 20.0
+            if port and port not in [80, 443]:
+                signals.append(f"URL uses non-standard network port (:{port})")
+                score += 20.0
 
-        if impersonated_brand:
-            signals.append(f"Brand impersonation detected: deceptive lookalike of '{impersonated_brand}' without authorization")
-            score += 40.0
+            if impersonated_brand:
+                signals.append(f"Brand impersonation detected: deceptive lookalike of '{impersonated_brand}' without authorization")
+                score += 40.0
 
-        if len(found_keywords) >= 2:
-            signals.append(f"Multiple social-engineering keywords in URL: {', '.join(found_keywords[:4])}")
-            score += min(30.0, len(found_keywords) * 8.0)
-        elif len(found_keywords) == 1:
-            signals.append(f"Sensitive credential/banking keyword in URL: {found_keywords[0]}")
-            score += 10.0
+            if len(found_keywords) >= 2:
+                signals.append(f"Multiple social-engineering keywords in URL: {', '.join(found_keywords[:4])}")
+                score += min(30.0, len(found_keywords) * 8.0)
+            elif len(found_keywords) == 1:
+                signals.append(f"Sensitive credential/banking keyword in URL: {found_keywords[0]}")
+                score += 10.0
 
-        if protocol == "http" and (impersonated_brand or len(found_keywords) > 0):
-            signals.append("Insecure HTTP protocol used for sensitive banking or login interaction")
-            score += 15.0
+            if protocol == "http" and (impersonated_brand or len(found_keywords) > 0):
+                signals.append("Insecure HTTP protocol used for sensitive banking or login interaction")
+                score += 15.0
 
-        base_risk_score = min(100.0, max(0.0, round(score, 1)))
+            base_risk_score = min(100.0, max(0.0, round(score, 1)))
 
         return URLFeatureAnalysis(
             url=full_url,
@@ -203,6 +288,8 @@ class URLAnalyzer:
             suspicious_keywords=found_keywords,
             brand_impersonated=impersonated_brand,
             brand_similarity_score=similarity_score,
+            is_official_domain=is_official,
+            official_brand_name=official_brand,
             has_at_symbol=has_at_symbol,
             has_double_slash=has_double_slash,
             has_hex_encoding=has_hex_encoding,
@@ -220,12 +307,11 @@ class URLAnalyzer:
         url_lower = full_url.lower()
 
         for brand, official_domains in TARGET_BRANDS.items():
-            # If domain exactly matches official domain or is a subdomain of official domain, it is legit
-            is_legit = any(domain == legit or domain.endswith("." + legit) for legit in official_domains)
-            if is_legit:
+            # If domain is already one of the official domains, it's NOT an impersonator
+            if any(domain == legit or domain.endswith("." + legit) for legit in official_domains):
                 continue
 
-            # Direct substring in foreign domain
+            # Substring match on foreign domain (e.g. sbi in sbi-update.xyz)
             if brand in domain:
                 return (brand.upper(), 0.95)
 
@@ -237,7 +323,7 @@ class URLAnalyzer:
                     if dist == 1 and len(brand) >= 3:
                         return (brand.upper(), 0.90)
 
-            # Brand in path/subdomain with sensitive keywords
+            # Brand in path/subdomain with sensitive keywords on unauthorized domain
             if brand in url_lower:
                 if any(kw in url_lower for kw in ["login", "kyc", "update", "verify", "pay", "auth"]):
                     return (brand.upper(), 0.85)

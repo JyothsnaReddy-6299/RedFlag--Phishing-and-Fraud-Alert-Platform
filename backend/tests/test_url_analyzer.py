@@ -3,9 +3,17 @@ from app.services.url_analyzer import url_analyzer
 
 def test_legitimate_url():
     res = url_analyzer.analyze("https://www.onlinesbi.sbi/portal")
-    assert res.base_risk_score < 30
+    assert res.base_risk_score == 0.0
     assert res.brand_impersonated is None
+    assert res.is_official_domain is True
     assert res.suspicious_tld is False
+
+def test_sbi_bank_in_official_domain():
+    res = url_analyzer.analyze("https://onlinesbi.sbi.bank.in/")
+    assert res.is_official_domain is True
+    assert res.brand_impersonated is None
+    assert res.base_risk_score == 0.0
+    assert "SBI" in res.official_brand_name
 
 def test_phishing_brand_impersonation():
     res = url_analyzer.analyze("http://sbi-kyc-update-verification.xyz/login")

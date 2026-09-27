@@ -7,7 +7,25 @@ class URLRiskScorer:
         factors = list(features.threat_signals)
         advice: List[str] = []
         sources: List[str] = []
-        
+
+        # 1. VERIFIED OFFICIAL DOMAIN CHECK (Immunity from False Positives)
+        if features.is_official_domain:
+            return URLScanResponse(
+                url=features.url,
+                domain=features.domain,
+                risk_score=0,
+                risk_level=RiskLevel.SAFE_LOW,
+                category=URLCategory.LEGITIMATE,
+                confidence=0.99,
+                url_features=features,
+                threat_intel_match=False,
+                threat_sources=[],
+                contributing_factors=[f"Verified Official Portal: Belongs to {features.official_brand_name or 'authorized registry'}"],
+                mitigation_advice=["This is the legitimate, verified official portal. It is safe to use."],
+                explanation=f"Verified authentic official domain of {features.official_brand_name or 'the organization'}."
+            )
+
+        # 2. General Evaluation
         raw_score = features.base_risk_score
         confidence = 0.70
         is_threat_match = False
@@ -44,7 +62,7 @@ class URLRiskScorer:
         if final_score < settings.RISK_THRESHOLD_LOW:
             level = RiskLevel.SAFE_LOW
             explanation = "URL exhibits standard structure with no deceptive brand imitation or known threat matches."
-            advice.append("Always check the SSL padlock in your browser before entering credentials.")
+            advice.append("Always verify the browser address bar before entering confidential credentials.")
         elif final_score < settings.RISK_THRESHOLD_SUSPICIOUS:
             level = RiskLevel.SUSPICIOUS
             explanation = "URL displays unusual structural characteristics (e.g. length, subdomains, or keywords) that warrant caution."

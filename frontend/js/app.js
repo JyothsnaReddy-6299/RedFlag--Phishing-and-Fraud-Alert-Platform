@@ -111,7 +111,9 @@ function renderScanResult(data) {
   document.getElementById('metric-tld').textContent = features.detected_tld ? `.${features.detected_tld}` : "None";
   
   const brandEl = document.getElementById('metric-brand');
-  if (features.brand_impersonated) {
+  if (features.is_official_domain) {
+    brandEl.innerHTML = `<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i>Official ${features.official_brand_name || 'Domain'}</span>`;
+  } else if (features.brand_impersonated) {
     brandEl.innerHTML = `<span class="text-redflag font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Mimics ${features.brand_impersonated}</span>`;
   } else {
     brandEl.innerHTML = `<span class="text-emerald-700 font-semibold"><i class="fa-solid fa-check mr-1"></i>None Detected</span>`;
@@ -124,10 +126,13 @@ function renderScanResult(data) {
   const factorsList = document.getElementById('factors-list');
   factorsList.innerHTML = '';
   (data.contributing_factors || []).forEach(f => {
+    const isOfficial = f.includes("Verified Official");
+    const iconClass = isOfficial ? "fa-circle-check text-emerald-600" : "fa-triangle-exclamation text-redflag";
+    const bgClass = isOfficial ? "bg-emerald-50 border-emerald-200 text-emerald-900" : "bg-canvas border-accent text-slate-800";
     factorsList.innerHTML += `
-      <li class="flex items-start gap-2 bg-canvas p-2.5 rounded-lg border border-accent">
-        <i class="fa-solid fa-triangle-exclamation text-redflag mt-0.5 text-xs flex-shrink-0"></i>
-        <span class="text-xs text-slate-800 font-medium">${f}</span>
+      <li class="flex items-start gap-2 ${bgClass} p-2.5 rounded-lg border">
+        <i class="fa-solid ${iconClass} mt-0.5 text-xs flex-shrink-0"></i>
+        <span class="text-xs font-medium">${f}</span>
       </li>
     `;
   });

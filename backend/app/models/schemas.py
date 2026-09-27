@@ -32,6 +32,8 @@ class URLFeatureAnalysis(BaseModel):
     suspicious_keywords: List[str] = Field(default_factory=list)
     brand_impersonated: Optional[str] = None
     brand_similarity_score: float = 0.0
+    is_official_domain: bool = False
+    official_brand_name: Optional[str] = None
     has_at_symbol: bool = False
     has_double_slash: bool = False
     has_hex_encoding: bool = False
