@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberShield — Threat Intelligence & Phishing Detector</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Vis.js Network for Interactive Graph Visualization -->
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    #network-canvas {
+      width: 100%;
+      height: 520px;
+      background: #0f172a;
+      border-radius: 0.75rem;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Top Navbar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
+          <i class="fa-solid fa-shield-halved text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            CyberShield
+            <span class="text-xs font-mono font-medium px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">Threat Intel</span>
+          </h1>
+          <p class="text-xs text-slate-400">Community Phishing & Fraud Intelligence Platform</p>
+        </div>
+      </div>
+      
+      <!-- System Status -->
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-950 text-emerald-400 border border-emerald-800">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          API Online
+        </span>
+        <a href="/api/v1/docs" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-book-bookmark text-cyan-400"></i> API Docs
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="bg-slate-900 border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 flex space-x-2 overflow-x-auto py-2">
+      <button onclick="switchTab('scanner')" id="tab-scanner" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 bg-cyan-600 text-white transition">
+        <i class="fa-solid fa-magnifying-glass-chart"></i> Real-time Scanner
+      </button>
+      <button onclick="switchTab('report')" id="tab-report" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-triangle-exclamation"></i> Report Scam
+      </button>
+      <button onclick="switchTab('feed')" id="tab-feed" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-list-check"></i> Community Feed
+      </button>
+      <button onclick="switchTab('graph')" id="tab-graph" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-diagram-project"></i> Campaigns & Graph
+      </button>
+      <button onclick="switchTab('investigate')" id="tab-investigate" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-user-secret"></i> Deep Investigation
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
+
+    <!-- TAB 1: REAL-TIME SCANNER -->
+    <section id="section-scanner" class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Input Column -->
+        <div class="lg:col-span-6 space-y-4">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+            <h2 class="text-base font-semibold text-white mb-2 flex items-center gap-2">
+              <i class="fa-solid fa-radar text-cyan-400"></i> Scan URL or Fraud Message
+            </h2>
+            <p class="text-xs text-slate-400 mb-4">
+              Supports English, Tamil, and Tanglish text, embedded URLs, phone numbers, and UPI handles.
+            </p>
+
+            <!-- Sample Preset Buttons -->
+            <div class="mb-4">
+              <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Try Real-World Examples:</label>
+              <div class="flex flex-wrap gap-2">
+                <button onclick="loadSample('tneb_tanglish')" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-900/40 px-2.5 py-1.5 rounded-md transition">
+                  ⚡ Tanglish TNEB
+                </button>
+                <button onclick="loadSample('sbi_english')" class="text-xs bg-slate-800 hover:bg-slate-700 text-rose-300 border border-rose-900/40 px-2.5 py-1.5 rounded-md transition">
+                  🏦 SBI KYC (English)
+                </button>
+                <button onclick="loadSample('tamil_script')" class="text-xs bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-900/40 px-2.5 py-1.5 rounded-md transition">
+                  ⚡ Tamil Script
+                </button>
+                <button onclick="loadSample('phish_url')" class="text-xs bg-slate-800 hover:bg-slate-700 text-red-300 border border-red-900/40 px-2.5 py-1.5 rounded-md transition">
+                  🌐 Typosquat URL
+                </button>
+                <button onclick="loadSample('legit_url')" class="text-xs bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-900/40 px-2.5 py-1.5 rounded-md transition">
+                  ✅ Benign URL
+                </button>
+              </div>
+            </div>
+
+            <!-- Form Inputs -->
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs font-medium text-slate-300 block mb-1">Message Content (SMS / WhatsApp):</label>
+                <textarea id="scan-text" rows="4" placeholder="Paste suspicious message or SMS here..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"></textarea>
+              </div>
+
+              <div>
+                <label class="text-xs font-medium text-slate-300 block mb-1">URL (Optional if inside message):</label>
+                <input type="text" id="scan-url" placeholder="e.g. http://sbi-kyc-update-portal.xyz/login" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition" />
+              </div>
+
+              <button onclick="runScan()" id="btn-scan" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold py-2.5 rounded-lg text-sm shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2 transition">
+                <i class="fa-solid fa-magnifying-glass"></i> Analyze Threat Indicators
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Result Column -->
+        <div class="lg:col-span-6 space-y-4">
+          <div id="scan-placeholder" class="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center flex flex-col items-center justify-center min-h-[380px]">
+            <div class="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 mb-3">
+              <i class="fa-solid fa-shield-cat text-3xl"></i>
+            </div>
+            <h3 class="text-slate-300 font-medium">Ready for Inspection</h3>
+            <p class="text-xs text-slate-500 max-w-sm mt-1">Submit a URL or message on the left to inspect linguistic markers, brand impersonation, and composite risk scoring.</p>
+          </div>
+
+          <div id="scan-result" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4">
+            <!-- Score Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div>
+                <span id="risk-badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"></span>
+                <h3 id="risk-category" class="text-base font-bold text-white mt-1"></h3>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-slate-400 block">Risk Score</span>
+                <span id="risk-score-num" class="text-3xl font-extrabold mono"></span>
+                <span class="text-xs text-slate-400">/100</span>
+              </div>
+            </div>
+
+            <!-- Risk Progress Bar -->
+            <div>
+              <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden">
+                <div id="risk-bar" class="h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- Explanation & Mitigations -->
+            <div class="bg-slate-950 p-3.5 rounded-lg border border-slate-800">
+              <h4 class="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-info"></i> Assessment Summary
+              </h4>
+              <p id="risk-explanation" class="text-xs text-slate-300 leading-relaxed"></p>
+            </div>
+
+            <!-- Extracted Entities -->
+            <div>
+              <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Extracted Threat Indicators:</h4>
+              <div id="entities-container" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- Contributing Factors -->
+            <div>
+              <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Contributing Threat Factors:</h4>
+              <ul id="factors-list" class="space-y-1.5 text-xs text-slate-300"></ul>
+            </div>
+
+            <!-- Mitigation Advice -->
+            <div class="bg-amber-950/20 border border-amber-900/50 p-3 rounded-lg">
+              <h4 class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                <i class="fa-solid fa-hand-holding-hand"></i> Citizen Safety Advice:
+              </h4>
+              <ul id="advice-list" class="space-y-1 text-xs text-amber-200/90 list-disc list-inside"></ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 2: COMMUNITY REPORT SUBMISSION -->
+    <section id="section-report" class="hidden max-w-2xl mx-auto space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-lg bg-rose-950 border border-rose-800 flex items-center justify-center text-rose-400">
+            <i class="fa-solid fa-flag text-lg"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-white">Report Scam Incident</h2>
+            <p class="text-xs text-slate-400">Crowdsource fraud indicators to protect your local community.</p>
+          </div>
+        </div>
+
+        <form id="report-form" onsubmit="submitCommunityReport(event)" class="space-y-4">
+          <div>
+            <label class="text-xs font-medium text-slate-300 block mb-1">Scam Category (Optional - auto-detected if left empty):</label>
+            <select id="rpt-category" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+              <option value="">-- Auto-Detect Category --</option>
+              <option value="ELECTRICITY_BILL">Electricity Bill Disconnection (TNEB)</option>
+              <option value="BANKING_FRAUD">Banking / Account Suspension</option>
+              <option value="KYC_EXPIRY">KYC / PAN / Aadhaar Expiry</option>
+              <option value="UPI_FRAUD">UPI / Cashback / Reward Scam</option>
+              <option value="LOTTERY_PRIZE">Lottery / Prize Fraud</option>
+              <option value="JOB_SCAM">Part-Time / Telegram Job Scam</option>
+              <option value="OTP_THEFT">OTP / Credential Theft</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-xs font-medium text-slate-300 block mb-1">Scam SMS or Message Received:</label>
+            <textarea id="rpt-message" rows="3" placeholder="e.g. Ungal TNEB bill kattavum udane illaiyendral current vettpadum..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500"></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-medium text-slate-300 block mb-1">Sender Phone Number:</label>
+              <input type="text" id="rpt-phone" placeholder="e.g. 9840123456" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+            </div>
+            <div>
+              <label class="text-xs font-medium text-slate-300 block mb-1">UPI ID Demanded (if any):</label>
+              <input type="text" id="rpt-upi" placeholder="e.g. fraudster@okhdfcbank" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-medium text-slate-300 block mb-1">Suspicious URL / Link:</label>
+              <input type="text" id="rpt-url" placeholder="e.g. http://tneb-payment.xyz" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+            </div>
+            <div>
+              <label class="text-xs font-medium text-slate-300 block mb-1">Impersonated Organization:</label>
+              <input type="text" id="rpt-org" placeholder="e.g. TNEB, SBI, India Post" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-medium text-slate-300 block mb-1">City / Region:</label>
+              <input type="text" id="rpt-city" placeholder="e.g. Chennai" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+            </div>
+            <div>
+              <label class="text-xs font-medium text-slate-300 block mb-1">Locality / Area:</label>
+              <input type="text" id="rpt-area" placeholder="e.g. Velachery / Adyar" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs font-medium text-slate-300 block mb-1">Incident Description:</label>
+            <input type="text" id="rpt-desc" placeholder="Brief details about what the fraudster asked you to do..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+          </div>
+
+          <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-lg shadow-rose-600/20">
+            Submit Incident Report
+          </button>
+        </form>
+
+        <div id="report-success" class="hidden mt-4 p-4 rounded-lg bg-emerald-950 border border-emerald-800 text-emerald-300 text-xs"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: COMMUNITY FEED -->
+    <section id="section-feed" class="hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white">Live Community Threat Feed</h2>
+          <p class="text-xs text-slate-400">Crowdsourced fraud reports with privacy-first data minimization.</p>
+        </div>
+        <button onclick="loadReportsFeed()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-arrows-rotate"></i> Refresh Feed
+        </button>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 font-semibold uppercase tracking-wider">
+              <tr>
+                <th class="p-3">Report ID</th>
+                <th class="p-3">Category</th>
+                <th class="p-3">Masked Phone</th>
+                <th class="p-3">Masked UPI</th>
+                <th class="p-3">Target Org</th>
+                <th class="p-3">Location</th>
+                <th class="p-3">Risk Score</th>
+                <th class="p-3">Status</th>
+              </tr>
+            </thead>
+            <tbody id="feed-table-body" class="divide-y divide-slate-800 text-slate-300">
+              <tr><td colspan="8" class="p-4 text-center text-slate-500">Loading reports...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: CAMPAIGNS & GRAPH VISUALIZER -->
+    <section id="section-graph" class="hidden space-y-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base font-bold text-white">Syndicated Fraud Campaigns & Relationship Graph</h2>
+          <p class="text-xs text-slate-400">Clusters multi-vector scams sharing common telephone numbers, UPI IDs, or domain infrastructure.</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="loadGraphData()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-arrows-rotate"></i> Refresh Graph
+          </button>
+        </div>
+      </div>
+
+      <!-- Graph Visualizer Container -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl">
+        <!-- Legend -->
+        <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400 mb-3 border-b border-slate-800 pb-3">
+          <span class="font-semibold text-slate-300">Node Legend:</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> Report</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span> Phone Number</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span> UPI ID</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span> URL / Domain</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span> Brand</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-teal-500 inline-block"></span> Location</span>
+        </div>
+
+        <div id="network-canvas"></div>
+      </div>
+
+      <!-- Active Campaigns List -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+        <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-circle-nodes text-cyan-400"></i> Identified Fraud Campaigns
+        </h3>
+        <div id="campaigns-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <p class="text-xs text-slate-500">Analyzing campaign clusters...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: DEEP INVESTIGATION SEARCH -->
+    <section id="section-investigate" class="hidden max-w-3xl mx-auto space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+        <h2 class="text-base font-bold text-white mb-1 flex items-center gap-2">
+          <i class="fa-solid fa-fingerprint text-cyan-400"></i> Threat Entity Investigation
+        </h2>
+        <p class="text-xs text-slate-400 mb-4">
+          Query any phone number, UPI handle, domain, or report ID to view its complete 2-hop connected threat graph.
+        </p>
+
+        <div class="flex gap-2 mb-4">
+          <input type="text" id="inv-query" placeholder="Enter Phone (e.g. 9988112233) or UPI or Domain..." class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+          <button onclick="runInvestigation()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold px-5 py-2 rounded-lg text-sm transition">
+            Investigate
+          </button>
+        </div>
+
+        <div id="inv-result" class="hidden space-y-4">
+          <div class="p-4 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <div>
+              <span class="text-xs text-slate-400">Target Entity:</span>
+              <h4 id="inv-entity-name" class="text-base font-bold text-white mono"></h4>
+              <span id="inv-entity-type" class="text-xs px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-mono inline-block mt-1"></span>
+            </div>
+            <div class="text-right">
+              <span class="text-xs text-slate-400 block">Direct Connections</span>
+              <span id="inv-connections" class="text-2xl font-extrabold text-cyan-400 mono"></span>
+            </div>
+          </div>
+
+          <div id="inv-campaigns-box" class="hidden p-3 rounded-lg bg-rose-950/40 border border-rose-900/60 text-xs text-rose-200">
+            <span class="font-bold">⚠️ Linked to Syndicated Campaigns:</span> <span id="inv-campaigns-list"></span>
+          </div>
+
+          <div>
+            <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Connected Neighborhood Subgraph:</h4>
+            <div id="inv-network-canvas" style="width: 100%; height: 350px; background: #0f172a; border-radius: 0.75rem;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="border-t border-slate-800 bg-slate-900 py-3 text-center text-xs text-slate-500">
+    CyberShield Threat Intelligence &bull; Community Cybersecurity Platform
+  </footer>
+
+  <!-- Frontend Logic -->
+  <script>
+    // Tab switching
+    function switchTab(tab) {
+      ['scanner', 'report', 'feed', 'graph', 'investigate'].forEach(t => {
+        document.getElementById(`section-${t}`).classList.add('hidden');
+        const tabBtn = document.getElementById(`tab-${t}`);
+        tabBtn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition";
+      });
+
+      document.getElementById(`section-${tab}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-${tab}`);
+      activeBtn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 bg-cyan-600 text-white transition";
+
+      if (tab === 'feed') loadReportsFeed();
+      if (tab === 'graph') loadGraphData();
+    }
+
+    // Load sample presets
+    function loadSample(type) {
+      const msgInput = document.getElementById('scan-text');
+      const urlInput = document.getElementById('scan-url');
+
+      if (type === 'tneb_tanglish') {
+        msgInput.value = "Ungal TNEB power bill kattavum udane illaiyendral innum 2 hours la current vettpadum. Send money to tneb.officer984@okhdfcbank or call 9840123456";
+        urlInput.value = "";
+      } else if (type === 'sbi_english') {
+        msgInput.value = "Dear SBI customer, your net banking is suspended! Update your KYC urgently or debit card will be blocked within 24 hours. Click http://sbi-kyc-update-portal.xyz/login";
+        urlInput.value = "http://sbi-kyc-update-portal.xyz/login";
+      } else if (type === 'tamil_script') {
+        msgInput.value = "அன்புள்ள வாடிக்கையாளரே, உங்களின் மின்சார கட்டணம் செலுத்தப்படவில்லை. இன்றிரவு மின்சாரம் துண்டிக்கப்படும். உடனே தொடர்பு கொள்ளவும்: 9840123456";
+        urlInput.value = "";
+      } else if (type === 'phish_url') {
+        msgInput.value = "";
+        urlInput.value = "http://hdfc-rewards-claim.top/verify";
+      } else if (type === 'legit_url') {
+        msgInput.value = "";
+        urlInput.value = "https://www.onlinesbi.sbi";
+      }
+    }
+
+    // Run Scanner
+    async function runScan() {
+      const text = document.getElementById('scan-text').value.trim();
+      const url = document.getElementById('scan-url').value.trim();
+
+      if (!text && !url) {
+        alert("Please enter a message or URL to scan.");
+        return;
+      }
+
+      const btn = document.getElementById('btn-scan');
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/v1/scan/unified', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, url })
+        });
+        const data = await res.json();
+        renderScanResult(data);
+      } catch (err) {
+        alert("Error scanning threat: " + err.message);
+      } finally {
+        btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Analyze Threat Indicators';
+        btn.disabled = false;
+      }
+    }
+
+    function renderScanResult(data) {
+      document.getElementById('scan-placeholder').classList.add('hidden');
+      const resCard = document.getElementById('scan-result');
+      resCard.classList.remove('hidden');
+
+      const risk = data.risk_assessment;
+      const score = risk.risk_score;
+
+      // Risk score and badge
+      document.getElementById('risk-score-num').textContent = score;
+      document.getElementById('risk-category').textContent = risk.primary_category.replace(/_/g, ' ');
+      document.getElementById('risk-explanation').textContent = risk.explanation;
+
+      const badge = document.getElementById('risk-badge');
+      const bar = document.getElementById('risk-bar');
+      bar.style.width = `${score}%`;
+
+      if (score >= 85) {
+        badge.textContent = "CRITICAL THREAT";
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-950 text-rose-400 border border-rose-800";
+        bar.className = "h-2.5 rounded-full bg-rose-500";
+      } else if (score >= 60) {
+        badge.textContent = "HIGH RISK";
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-orange-950 text-orange-400 border border-orange-800";
+        bar.className = "h-2.5 rounded-full bg-orange-500";
+      } else if (score >= 30) {
+        badge.textContent = "SUSPICIOUS";
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-950 text-amber-400 border border-amber-800";
+        bar.className = "h-2.5 rounded-full bg-amber-500";
+      } else {
+        badge.textContent = "SAFE / BENIGN";
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-950 text-emerald-400 border border-emerald-800";
+        bar.className = "h-2.5 rounded-full bg-emerald-500";
+      }
+
+      // Render Entities
+      const entBox = document.getElementById('entities-container');
+      entBox.innerHTML = '';
+      const ents = data.extracted_entities;
+
+      (ents.phone_numbers || []).forEach(p => {
+        entBox.innerHTML += `<span class="bg-slate-800 text-rose-300 border border-rose-900/50 px-2 py-1 rounded text-xs mono"><i class="fa-solid fa-phone text-[10px]"></i> ${p}</span>`;
+      });
+      (ents.upi_ids || []).forEach(u => {
+        entBox.innerHTML += `<span class="bg-slate-800 text-emerald-300 border border-emerald-900/50 px-2 py-1 rounded text-xs mono"><i class="fa-solid fa-money-bill-transfer text-[10px]"></i> ${u}</span>`;
+      });
+      (ents.urls || []).forEach(u => {
+        entBox.innerHTML += `<span class="bg-slate-800 text-cyan-300 border border-cyan-900/50 px-2 py-1 rounded text-xs mono"><i class="fa-solid fa-link text-[10px]"></i> ${u.slice(0, 30)}...</span>`;
+      });
+      (ents.organizations || []).forEach(o => {
+        entBox.innerHTML += `<span class="bg-slate-800 text-amber-300 border border-amber-900/50 px-2 py-1 rounded text-xs"><i class="fa-solid fa-building text-[10px]"></i> ${o}</span>`;
+      });
+
+      if (!entBox.innerHTML) {
+        entBox.innerHTML = '<span class="text-xs text-slate-500 italic">None extracted</span>';
+      }
+
+      // Contributing Factors
+      const factorsList = document.getElementById('factors-list');
+      factorsList.innerHTML = '';
+      (risk.contributing_factors || []).forEach(f => {
+        factorsList.innerHTML += `<li class="flex items-start gap-1.5"><i class="fa-solid fa-triangle-exclamation text-amber-400 mt-0.5 text-[10px]"></i> ${f}</li>`;
+      });
+      if (!factorsList.innerHTML) {
+        factorsList.innerHTML = '<li class="text-slate-500 italic">No malicious factors found.</li>';
+      }
+
+      // Mitigation Advice
+      const adviceList = document.getElementById('advice-list');
+      adviceList.innerHTML = '';
+      (risk.mitigation_advice || []).forEach(a => {
+        adviceList.innerHTML += `<li>${a}</li>`;
+      });
+    }
+
+    // Submit Report
+    async function submitCommunityReport(e) {
+      e.preventDefault();
+      const payload = {
+        scam_category: document.getElementById('rpt-category').value || null,
+        raw_message: document.getElementById('rpt-message').value || null,
+        phone_number: document.getElementById('rpt-phone').value || null,
+        upi_id: document.getElementById('rpt-upi').value || null,
+        raw_url: document.getElementById('rpt-url').value || null,
+        organization: document.getElementById('rpt-org').value || null,
+        location_city: document.getElementById('rpt-city').value || null,
+        location_area: document.getElementById('rpt-area').value || null,
+        description: document.getElementById('rpt-desc').value || null
+      };
+
+      try {
+        const res = await fetch('/api/v1/reports', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        const successBox = document.getElementById('report-success');
+        successBox.classList.remove('hidden');
+        successBox.innerHTML = `<strong>✅ Report Filed Successfully!</strong><br/>Report ID: <code class="mono">${data.report_id}</code> | Calculated Risk Score: ${data.initial_risk_score}/100. Submitted for analyst review.`;
+        document.getElementById('report-form').reset();
+      } catch (err) {
+        alert("Error filing report: " + err.message);
+      }
+    }
+
+    // Load Reports Feed
+    async function loadReportsFeed() {
+      const tbody = document.getElementById('feed-table-body');
+      tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Loading live reports...</td></tr>';
+      try {
+        const res = await fetch('/api/v1/reports?limit=50');
+        const reports = await res.json();
+        tbody.innerHTML = '';
+        if (reports.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">No reports filed yet.</td></tr>';
+          return;
+        }
+
+        reports.forEach(r => {
+          const statusColor = r.status === 'VERIFIED' ? 'text-rose-400 bg-rose-950 border-rose-800' : 'text-amber-400 bg-amber-950 border-amber-800';
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-800/50 transition">
+              <td class="p-3 mono font-medium text-cyan-400">${r.report_id}</td>
+              <td class="p-3">${r.scam_category}</td>
+              <td class="p-3 mono text-slate-400">${r.masked_phone || '-'}</td>
+              <td class="p-3 mono text-slate-400">${r.masked_upi || '-'}</td>
+              <td class="p-3">${r.organization || '-'}</td>
+              <td class="p-3 text-slate-400">${r.location_area || r.location_city || '-'}</td>
+              <td class="p-3 font-bold mono text-white">${r.initial_risk_score}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${statusColor}">${r.status}</span></td>
+            </tr>
+          `;
+        });
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-rose-400">Failed to load feed: ${err.message}</td></tr>`;
+      }
+    }
+
+    // Graph Visualizer
+    let networkInstance = null;
+
+    async function loadGraphData() {
+      try {
+        const [graphRes, campRes] = await Promise.all([
+          fetch('/api/v1/graph/full'),
+          fetch('/api/v1/graph/campaigns')
+        ]);
+        const graphData = await graphRes.json();
+        const campaigns = await campRes.json();
+
+        renderNetwork(graphData, 'network-canvas');
+        renderCampaignsList(campaigns);
+      } catch (err) {
+        console.error("Error loading graph: ", err);
+      }
+    }
+
+    function renderNetwork(graphData, containerId) {
+      const container = document.getElementById(containerId);
+      
+      const nodeColors = {
+        REPORT: '#3b82f6',
+        PHONE: '#ef4444',
+        UPI: '#10b981',
+        URL: '#8b5cf6',
+        DOMAIN: '#a855f7',
+        BRAND: '#f59e0b',
+        LOCATION: '#14b8a6',
+        SCAM_TYPE: '#eab308'
+      };
+
+      const nodes = new vis.DataSet(
+        graphData.nodes.map(n => ({
+          id: n.id,
+          label: n.label,
+          color: {
+            background: nodeColors[n.type] || '#64748b',
+            border: '#1e293b',
+            highlight: { background: '#38bdf8', border: '#ffffff' }
+          },
+          font: { color: '#f8fafc', size: 12, face: 'Plus Jakarta Sans' },
+          shape: n.type === 'REPORT' ? 'box' : 'dot',
+          size: n.type === 'REPORT' ? 20 : 16
+        }))
+      );
+
+      const edges = new vis.DataSet(
+        graphData.edges.map(e => ({
+          from: e.source,
+          to: e.target,
+          label: e.relationship,
+          color: { color: '#334155', highlight: '#0ea5e9' },
+          font: { color: '#94a3b8', size: 9, align: 'middle' },
+          arrows: 'to',
+          smooth: { type: 'continuous' }
+        }))
+      );
+
+      const options = {
+        physics: {
+          stabilization: false,
+          barnesHut: {
+            gravitationalConstant: -2000,
+            springConstant: 0.04,
+            springLength: 95
+          }
+        },
+        interaction: {
+          hover: true,
+          tooltipDelay: 200,
+          zoomView: true
+        }
+      };
+
+      if (containerId === 'network-canvas' && networkInstance) {
+        networkInstance.destroy();
+      }
+
+      const net = new vis.Network(container, { nodes, edges }, options);
+      if (containerId === 'network-canvas') networkInstance = net;
+      return net;
+    }
+
+    function renderCampaignsList(campaigns) {
+      const box = document.getElementById('campaigns-container');
+      box.innerHTML = '';
+      if (!campaigns || campaigns.length === 0) {
+        box.innerHTML = '<p class="text-xs text-slate-500">No active multi-incident campaigns detected yet.</p>';
+        return;
+      }
+
+      campaigns.forEach(c => {
+        box.innerHTML += `
+          <div class="bg-slate-950 border border-slate-800 rounded-lg p-4 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="mono text-xs font-bold text-rose-400 bg-rose-950 border border-rose-800 px-2 py-0.5 rounded">${c.campaign_id}</span>
+              <span class="text-xs text-slate-400">${c.report_count} Connected Reports</span>
+            </div>
+            <h4 class="text-sm font-bold text-white">${c.name}</h4>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded">Scam: ${c.scam_category}</span>
+              ${c.impersonated_brand ? `<span class="bg-amber-950 text-amber-300 border border-amber-900 px-2 py-0.5 rounded">Impersonating: ${c.impersonated_brand}</span>` : ''}
+              <span class="bg-cyan-950 text-cyan-300 border border-cyan-900 px-2 py-0.5 rounded">${c.threat_indicators_count} Infrastructure Indicators</span>
+            </div>
+            ${c.associated_locations.length > 0 ? `<p class="text-[11px] text-slate-400">Locations: ${c.associated_locations.join(', ')}</p>` : ''}
+          </div>
+        `;
+      });
+    }
+
+    // Entity Deep Investigation
+    async function runInvestigation() {
+      const q = document.getElementById('inv-query').value.trim();
+      if (!q) return;
+
+      try {
+        const res = await fetch(`/api/v1/graph/investigate/${encodeURIComponent(q)}`);
+        const data = await res.json();
+
+        const resBox = document.getElementById('inv-result');
+        resBox.classList.remove('hidden');
+
+        if (!data.found) {
+          document.getElementById('inv-entity-name').textContent = q;
+          document.getElementById('inv-entity-type').textContent = "Not Found in Threat Graph";
+          document.getElementById('inv-connections').textContent = "0";
+          document.getElementById('inv-campaigns-box').classList.add('hidden');
+          document.getElementById('inv-network-canvas').innerHTML = '<div class="h-full flex items-center justify-center text-xs text-slate-500">No records found for this indicator.</div>';
+          return;
+        }
+
+        document.getElementById('inv-entity-name').textContent = data.queried_entity;
+        document.getElementById('inv-entity-type').textContent = data.entity_type || 'INDICATOR';
+        document.getElementById('inv-connections').textContent = data.connection_count;
+
+        const campBox = document.getElementById('inv-campaigns-box');
+        if (data.connected_campaign_ids && data.connected_campaign_ids.length > 0) {
+          campBox.classList.remove('hidden');
+          document.getElementById('inv-campaigns-list').textContent = data.connected_campaign_ids.join(', ');
+        } else {
+          campBox.classList.add('hidden');
+        }
+
+        renderNetwork(data.subgraph, 'inv-network-canvas');
+      } catch (err) {
+        alert("Investigation error: " + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

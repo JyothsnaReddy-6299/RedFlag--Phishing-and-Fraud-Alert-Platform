@@ -9,6 +9,12 @@ def test_health():
     assert res.status_code == 200
     assert res.json()["status"] == "online"
 
+def test_frontend_root():
+    res = client.get("/")
+    assert res.status_code == 200
+    assert "CyberShield" in res.text
+    assert "network-canvas" in res.text
+
 def test_scan_url_endpoint():
     payload = {"url": "http://sbi-verification-portal.xyz/login"}
     res = client.post("/api/v1/scan/url", json=payload)

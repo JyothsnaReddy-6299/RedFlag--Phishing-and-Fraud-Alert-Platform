@@ -1,5 +1,7 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.api import api_router
 from app.db.session import Base, engine
@@ -34,16 +36,13 @@ def health_check():
         "status": "online",
         "service": settings.PROJECT_NAME,
         "version": settings.PROJECT_VERSION,
-        "phase": "Phase 1 - Core Detection Engines Active"
+        "phase": "Phase 3 - Graph & Campaigns Active"
     }
 
-@app.get("/", tags=["System"])
-def root():
-    return {
-        "message": f"Welcome to {settings.PROJECT_NAME}",
-        "docs_url": f"{settings.API_V1_STR}/docs",
-        "health_check": "/health"
-    }
+# Mount Static frontend UI
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.exists(static_dir):
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
