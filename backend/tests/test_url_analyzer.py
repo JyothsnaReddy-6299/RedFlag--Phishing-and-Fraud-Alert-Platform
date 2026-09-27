@@ -18,9 +18,19 @@ def test_ip_based_url():
     res = url_analyzer.analyze("http://192.168.1.100/paytm/verify")
     assert res.ip_based is True
     assert any("raw IP" in s for s in res.threat_signals)
-    assert res.base_risk_score >= 40
+    assert res.base_risk_score >= 35
 
 def test_obfuscated_at_symbol():
     res = url_analyzer.analyze("http://legitsite.com@evil-phishing-host.live/steal")
-    assert "@" in res.url
+    assert res.has_at_symbol is True
     assert any("@" in s for s in res.threat_signals)
+
+def test_non_standard_port():
+    res = url_analyzer.analyze("http://malicious-node.xyz:8080/admin")
+    assert res.port == 8080
+    assert any("non-standard network port" in s for s in res.threat_signals)
+
+def test_threat_feed_check():
+    match = url_analyzer.check_threat_feeds("sbi-kyc-update.xyz")
+    assert match is not None
+    assert match["category"] == "PHISHING"

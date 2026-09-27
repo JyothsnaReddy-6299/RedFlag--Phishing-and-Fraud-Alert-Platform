@@ -4,15 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.api import api_router
-from app.db.session import Base, engine
-
-# Create tables
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.PROJECT_VERSION,
-    description="Community Cyber Threat Intelligence Platform detecting phishing URLs, SMS fraud, and multilingual scam campaigns.",
+    description="RedFlag — Real-Time Malicious URL & Phishing Detection Platform.",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     docs_url=f"{settings.API_V1_STR}/docs",
     redoc_url=f"{settings.API_V1_STR}/redoc"
@@ -36,7 +32,7 @@ def health_check():
         "status": "online",
         "service": settings.PROJECT_NAME,
         "version": settings.PROJECT_VERSION,
-        "phase": "Phase 3 - Graph & Campaigns Active"
+        "focus": "Malicious Links & Phishing Detection Engine"
     }
 
 # Mount Static frontend UI from frontend directory
