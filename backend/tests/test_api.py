@@ -12,7 +12,7 @@ def test_health():
 def test_frontend_root():
     res = client.get("/")
     assert res.status_code == 200
-    assert "CyberShield" in res.text
+    assert "RedFlag" in res.text
     assert "network-canvas" in res.text
 
 def test_scan_url_endpoint():

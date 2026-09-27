@@ -3,392 +3,539 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CyberShield — Threat Intelligence & Phishing Detector</title>
+  <title>RedFlag — Community Cyber Threat Intelligence & Phishing Defense</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Vis.js Network for Interactive Graph Visualization -->
   <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <!-- Custom Stylesheet -->
+  <!-- Custom Palette Stylesheet -->
   <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+<body class="bg-canvas text-slate-900 min-h-screen flex flex-col antialiased">
 
-  <!-- Top Navbar -->
-  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+  <!-- Top Announcement Bar -->
+  <div class="bg-slate-900 text-white text-xs py-1.5 px-4 text-center border-b border-accent font-medium">
+    <span class="inline-flex items-center gap-1.5">
+      <span class="w-2 h-2 rounded-full bg-redflag animate-pulse"></span>
+      <strong class="text-red-400">RedFlag Active:</strong> Real-time detection for phishing URLs, UPI fraud, and multilingual SMS scams (English, தமிழ், Tanglish).
+    </span>
+  </div>
+
+  <!-- Main Navigation Header -->
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-accent shadow-sm">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
-          <i class="fa-solid fa-shield-halved text-xl"></i>
+      <!-- Brand Logo -->
+      <a href="/" class="flex items-center space-x-3 group">
+        <div class="w-10 h-10 rounded-xl bg-redflag text-white flex items-center justify-center shadow-md shadow-red-500/20 group-hover:scale-105 transition">
+          <i class="fa-solid fa-flag text-lg"></i>
         </div>
         <div>
-          <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-            CyberShield
-            <span class="text-xs font-mono font-medium px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">Threat Intel</span>
-          </h1>
-          <p class="text-xs text-slate-400">Community Phishing & Fraud Intelligence Platform</p>
+          <div class="flex items-center gap-1.5">
+            <span class="text-xl font-extrabold text-slate-900 tracking-tight">Red<span class="text-redflag">Flag</span></span>
+            <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-tint text-slate-800 border border-accent">INTELLIGENCE</span>
+          </div>
+          <p class="text-[11px] text-slate-500 font-medium">Community Phishing & Fraud Detector</p>
         </div>
-      </div>
-      
-      <!-- System Status -->
+      </a>
+
+      <!-- Quick Nav Links -->
+      <nav class="hidden md:flex items-center space-x-1 font-semibold text-xs text-slate-700">
+        <button onclick="scrollToSection('section-scanner')" class="px-3 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-shield-halved text-redflag"></i> Scanner
+        </button>
+        <button onclick="switchTab('report'); scrollToSection('interactive-suite')" class="px-3 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-flag text-redflag"></i> Report Scam
+        </button>
+        <button onclick="switchTab('feed'); scrollToSection('interactive-suite')" class="px-3 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-database text-slate-600"></i> Threat Feed
+        </button>
+        <button onclick="switchTab('graph'); scrollToSection('interactive-suite')" class="px-3 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-diagram-project text-slate-600"></i> Campaigns Graph
+        </button>
+        <button onclick="switchTab('investigate'); scrollToSection('interactive-suite')" class="px-3 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-magnifying-glass text-slate-600"></i> Deep Investigation
+        </button>
+      </nav>
+
+      <!-- Action Buttons -->
       <div class="flex items-center gap-3">
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-950 text-emerald-400 border border-emerald-800">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          API Online
-        </span>
-        <a href="/api/v1/docs" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
-          <i class="fa-solid fa-book-bookmark text-cyan-400"></i> API Docs
+        <a href="/api/v1/docs" target="_blank" class="text-xs bg-tint hover:bg-slate-200 text-slate-800 font-semibold px-3 py-2 rounded-lg border border-accent flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-code text-slate-600"></i> API Docs
         </a>
+        <button onclick="scrollToSection('section-scanner')" class="text-xs bg-redflag hover:bg-red-600 text-white font-bold px-4 py-2 rounded-lg shadow-md shadow-red-500/20 flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-bolt"></i> Quick Scan
+        </button>
       </div>
     </div>
   </header>
 
-  <!-- Navigation Tabs -->
-  <div class="bg-slate-900 border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 flex space-x-2 overflow-x-auto py-2">
-      <button onclick="switchTab('scanner')" id="tab-scanner" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 bg-cyan-600 text-white transition">
-        <i class="fa-solid fa-magnifying-glass-chart"></i> Real-time Scanner
-      </button>
-      <button onclick="switchTab('report')" id="tab-report" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">
-        <i class="fa-solid fa-triangle-exclamation"></i> Report Scam
-      </button>
-      <button onclick="switchTab('feed')" id="tab-feed" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">
-        <i class="fa-solid fa-list-check"></i> Community Feed
-      </button>
-      <button onclick="switchTab('graph')" id="tab-graph" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">
-        <i class="fa-solid fa-diagram-project"></i> Campaigns & Graph
-      </button>
-      <button onclick="switchTab('investigate')" id="tab-investigate" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">
-        <i class="fa-solid fa-user-secret"></i> Deep Investigation
-      </button>
+  <!-- HERO SECTION -->
+  <section class="relative bg-gradient-to-b from-tint/70 via-tint/30 to-canvas pt-12 pb-16 px-4 border-b border-accent">
+    <div class="max-w-7xl mx-auto text-center space-y-4">
+      
+      <!-- Eyebrow Badge -->
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-accent shadow-sm text-xs font-semibold text-slate-800">
+        <span class="w-2 h-2 rounded-full bg-redflag"></span>
+        AI-Powered Scam & Phishing Defense Platform
+      </div>
+
+      <!-- Main Headline -->
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-950 tracking-tight max-w-4xl mx-auto leading-tight">
+        Spot the Scam Before It Strikes.<br/>
+        Raise a <span class="text-redflag underline decoration-redflag/40 underline-offset-4">RedFlag</span> in Seconds.
+      </h1>
+
+      <!-- Subheadline -->
+      <p class="text-sm md:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
+        Instantly analyze suspicious links, WhatsApp notices, and banking SMS across <strong>English</strong>, <strong>Tamil (தமிழ்)</strong>, and <strong>Tanglish</strong>. Connect related fraud rings using entity relationship graphs and community evidence.
+      </p>
+
+      <!-- Stats Ribbon -->
+      <div class="pt-2 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-600 font-medium">
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-bolt text-redflag"></i> &lt; 50ms Real-time Detection</span>
+        <span class="text-slate-300">&bull;</span>
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-language text-slate-700"></i> English, Tamil & Tanglish NLP</span>
+        <span class="text-slate-300">&bull;</span>
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-network-wired text-slate-700"></i> Graph Campaign Correlation</span>
+        <span class="text-slate-300">&bull;</span>
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-user-shield text-slate-700"></i> Privacy-First Masking</span>
+      </div>
+
     </div>
-  </div>
+  </section>
 
-  <!-- Main Content Container -->
-  <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
-
-    <!-- TAB 1: REAL-TIME SCANNER -->
-    <section id="section-scanner" class="space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <!-- Input Column -->
-        <div class="lg:col-span-6 space-y-4">
-          <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
-            <h2 class="text-base font-semibold text-white mb-2 flex items-center gap-2">
-              <i class="fa-solid fa-radar text-cyan-400"></i> Scan URL or Fraud Message
-            </h2>
-            <p class="text-xs text-slate-400 mb-4">
-              Supports English, Tamil, and Tanglish text, embedded URLs, phone numbers, and UPI handles.
-            </p>
-
-            <!-- Sample Preset Buttons -->
-            <div class="mb-4">
-              <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Try Real-World Examples:</label>
-              <div class="flex flex-wrap gap-2">
-                <button onclick="loadSample('tneb_tanglish')" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-900/40 px-2.5 py-1.5 rounded-md transition">
-                  ⚡ Tanglish TNEB
-                </button>
-                <button onclick="loadSample('sbi_english')" class="text-xs bg-slate-800 hover:bg-slate-700 text-rose-300 border border-rose-900/40 px-2.5 py-1.5 rounded-md transition">
-                  🏦 SBI KYC (English)
-                </button>
-                <button onclick="loadSample('tamil_script')" class="text-xs bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-900/40 px-2.5 py-1.5 rounded-md transition">
-                  ⚡ Tamil Script
-                </button>
-                <button onclick="loadSample('phish_url')" class="text-xs bg-slate-800 hover:bg-slate-700 text-red-300 border border-red-900/40 px-2.5 py-1.5 rounded-md transition">
-                  🌐 Typosquat URL
-                </button>
-                <button onclick="loadSample('legit_url')" class="text-xs bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-900/40 px-2.5 py-1.5 rounded-md transition">
-                  ✅ Benign URL
-                </button>
-              </div>
-            </div>
-
-            <!-- Form Inputs -->
-            <div class="space-y-3">
-              <div>
-                <label class="text-xs font-medium text-slate-300 block mb-1">Message Content (SMS / WhatsApp):</label>
-                <textarea id="scan-text" rows="4" placeholder="Paste suspicious message or SMS here..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"></textarea>
-              </div>
-
-              <div>
-                <label class="text-xs font-medium text-slate-300 block mb-1">URL (Optional if inside message):</label>
-                <input type="text" id="scan-url" placeholder="e.g. http://sbi-kyc-update-portal.xyz/login" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition" />
-              </div>
-
-              <button onclick="runScan()" id="btn-scan" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold py-2.5 rounded-lg text-sm shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2 transition">
-                <i class="fa-solid fa-magnifying-glass"></i> Analyze Threat Indicators
-              </button>
-            </div>
+  <!-- SECTION 1: EMBEDDED REAL-TIME SCANNER -->
+  <section id="section-scanner" class="max-w-7xl mx-auto px-4 -mt-8 mb-16 relative z-10 w-full">
+    <div class="rf-card rounded-2xl p-6 md:p-8 shadow-xl">
+      <div class="flex items-center justify-between pb-4 border-b border-accent mb-6">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-red-50 text-redflag border border-red-200 flex items-center justify-center font-bold text-lg">
+            <i class="fa-solid fa-radar"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-950">Real-Time Threat Scanner</h2>
+            <p class="text-xs text-slate-500">Scan any URL or message text to detect phishing heuristics and social-engineering traps.</p>
           </div>
         </div>
+        <span class="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-slate-500 bg-canvas px-3 py-1 rounded-full border border-accent">
+          <i class="fa-solid fa-shield-check text-emerald-600"></i> Active Engine v1.0
+        </span>
+      </div>
 
-        <!-- Result Column -->
+      <!-- Quick Preset Sample Chips -->
+      <div class="mb-5 bg-tint/60 p-3.5 rounded-xl border border-accent">
+        <label class="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">
+          <i class="fa-solid fa-wand-magic-sparkles text-redflag mr-1"></i> Try Real-World Scams:
+        </label>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="loadSample('tneb_tanglish')" class="text-xs bg-white hover:bg-slate-50 text-amber-900 font-semibold border border-amber-300 px-3 py-1.5 rounded-lg shadow-sm transition">
+            ⚡ Tanglish TNEB Electricity Bill
+          </button>
+          <button onclick="loadSample('sbi_english')" class="text-xs bg-white hover:bg-slate-50 text-red-900 font-semibold border border-red-300 px-3 py-1.5 rounded-lg shadow-sm transition">
+            🏦 SBI KYC Suspension (English)
+          </button>
+          <button onclick="loadSample('tamil_script')" class="text-xs bg-white hover:bg-slate-50 text-purple-900 font-semibold border border-purple-300 px-3 py-1.5 rounded-lg shadow-sm transition">
+            ⚡ Tamil Script (மின்சார கட்டணம்)
+          </button>
+          <button onclick="loadSample('phish_url')" class="text-xs bg-white hover:bg-slate-50 text-rose-900 font-semibold border border-rose-300 px-3 py-1.5 rounded-lg shadow-sm transition">
+            🌐 Lookalike URL (`hdfc-rewards.top`)
+          </button>
+          <button onclick="loadSample('legit_url')" class="text-xs bg-white hover:bg-slate-50 text-emerald-900 font-semibold border border-emerald-300 px-3 py-1.5 rounded-lg shadow-sm transition">
+            ✅ Benign URL (`onlinesbi.sbi`)
+          </button>
+        </div>
+      </div>
+
+      <!-- Dual Column Layout: Input & Result -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left: Input Form -->
         <div class="lg:col-span-6 space-y-4">
-          <div id="scan-placeholder" class="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center flex flex-col items-center justify-center min-h-[380px]">
-            <div class="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 mb-3">
-              <i class="fa-solid fa-shield-cat text-3xl"></i>
+          <div>
+            <label class="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-1.5">
+              Message or SMS Text:
+            </label>
+            <textarea id="scan-text" rows="4" placeholder="Paste suspicious SMS, WhatsApp message, or notice here (English, Tamil, Tanglish)..." class="w-full bg-canvas border border-accent rounded-xl p-3 text-xs md:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-redflag/40 focus:border-redflag transition"></textarea>
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-1.5">
+              URL (Optional if already in message):
+            </label>
+            <input type="text" id="scan-url" placeholder="e.g. http://sbi-kyc-update-portal.xyz/login" class="w-full bg-canvas border border-accent rounded-xl px-3 py-2.5 text-xs md:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-redflag/40 focus:border-redflag transition" />
+          </div>
+
+          <button onclick="runScan()" id="btn-scan" class="w-full bg-redflag hover:bg-red-600 text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 transition cursor-pointer">
+            <i class="fa-solid fa-shield-halved"></i> Analyze Threat Indicators
+          </button>
+        </div>
+
+        <!-- Right: Scan Result Display -->
+        <div class="lg:col-span-6">
+          <!-- Placeholder State -->
+          <div id="scan-placeholder" class="bg-tint/40 border border-dashed border-accent rounded-xl p-8 text-center flex flex-col items-center justify-center min-h-[320px]">
+            <div class="w-14 h-14 rounded-full bg-white text-slate-400 border border-accent flex items-center justify-center text-2xl mb-3 shadow-sm">
+              <i class="fa-solid fa-flag text-red-300"></i>
             </div>
-            <h3 class="text-slate-300 font-medium">Ready for Inspection</h3>
+            <h3 class="text-slate-800 font-bold text-sm">Awaiting Input</h3>
             <p class="text-xs text-slate-500 max-w-sm mt-1">Submit a URL or message on the left to inspect linguistic markers, brand impersonation, and composite risk scoring.</p>
           </div>
 
-          <div id="scan-result" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4">
+          <!-- Active Scan Result -->
+          <div id="scan-result" class="hidden bg-white border-2 border-accent rounded-xl p-5 shadow-lg space-y-4">
             <!-- Score Header -->
-            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div class="flex items-center justify-between pb-3 border-b border-accent">
               <div>
-                <span id="risk-badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"></span>
-                <h3 id="risk-category" class="text-base font-bold text-white mt-1"></h3>
+                <span id="risk-badge" class="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider"></span>
+                <h3 id="risk-category" class="text-base font-extrabold text-slate-900 mt-1"></h3>
               </div>
               <div class="text-right">
-                <span class="text-xs text-slate-400 block">Risk Score</span>
-                <span id="risk-score-num" class="text-3xl font-extrabold mono"></span>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Risk Score</span>
+                <span id="risk-score-num" class="text-3xl font-extrabold mono text-slate-900"></span>
                 <span class="text-xs text-slate-400">/100</span>
               </div>
             </div>
 
-            <!-- Risk Progress Bar -->
+            <!-- Progress Bar -->
             <div>
-              <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden">
-                <div id="risk-bar" class="h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+              <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-accent">
+                <div id="risk-bar" class="h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
               </div>
             </div>
 
-            <!-- Explanation & Mitigations -->
-            <div class="bg-slate-950 p-3.5 rounded-lg border border-slate-800">
-              <h4 class="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                <i class="fa-solid fa-circle-info"></i> Assessment Summary
+            <!-- Explanation Box -->
+            <div class="bg-tint/70 p-3.5 rounded-lg border border-accent">
+              <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-info text-redflag"></i> RedFlag Assessment Summary
               </h4>
-              <p id="risk-explanation" class="text-xs text-slate-300 leading-relaxed"></p>
+              <p id="risk-explanation" class="text-xs text-slate-700 leading-relaxed"></p>
             </div>
 
-            <!-- Extracted Entities -->
+            <!-- Extracted Indicators -->
             <div>
-              <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Extracted Threat Indicators:</h4>
+              <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Extracted Threat Indicators:</h4>
               <div id="entities-container" class="flex flex-wrap gap-2"></div>
             </div>
 
             <!-- Contributing Factors -->
             <div>
-              <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Contributing Threat Factors:</h4>
-              <ul id="factors-list" class="space-y-1.5 text-xs text-slate-300"></ul>
+              <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Contributing Threat Factors:</h4>
+              <ul id="factors-list" class="space-y-1.5 text-xs text-slate-700"></ul>
             </div>
 
-            <!-- Mitigation Advice -->
-            <div class="bg-amber-950/20 border border-amber-900/50 p-3 rounded-lg">
-              <h4 class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                <i class="fa-solid fa-hand-holding-hand"></i> Citizen Safety Advice:
+            <!-- Mitigation Safety Advice -->
+            <div class="bg-red-50 border border-red-200 p-3.5 rounded-lg">
+              <h4 class="text-xs font-bold text-red-900 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <i class="fa-solid fa-triangle-exclamation text-redflag"></i> Citizen Safety Actions:
               </h4>
-              <ul id="advice-list" class="space-y-1 text-xs text-amber-200/90 list-disc list-inside"></ul>
+              <ul id="advice-list" class="space-y-1 text-xs text-red-800 list-disc list-inside"></ul>
             </div>
           </div>
         </div>
 
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- TAB 2: COMMUNITY REPORT SUBMISSION -->
-    <section id="section-report" class="hidden max-w-2xl mx-auto space-y-4">
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="w-10 h-10 rounded-lg bg-rose-950 border border-rose-800 flex items-center justify-center text-rose-400">
-            <i class="fa-solid fa-flag text-lg"></i>
-          </div>
-          <div>
-            <h2 class="text-lg font-bold text-white">Report Scam Incident</h2>
-            <p class="text-xs text-slate-400">Crowdsource fraud indicators to protect your local community.</p>
-          </div>
+  <!-- CORE FEATURES / CAPABILITIES SHOWCASE -->
+  <section class="max-w-7xl mx-auto px-4 mb-16 w-full">
+    <div class="text-center max-w-2xl mx-auto mb-10">
+      <span class="text-xs font-extrabold uppercase tracking-wider text-redflag">Architecture & Capabilities</span>
+      <h2 class="text-2xl md:text-3xl font-extrabold text-slate-950 mt-1">Built to Uncover Syndicated Fraud</h2>
+      <p class="text-xs md:text-sm text-slate-600 mt-2">Unlike simple spam filters, RedFlag combines algorithmic detection with graph correlation and crowdsourced intelligence.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      
+      <!-- Feature 1 -->
+      <div class="rf-card-tint rounded-xl p-5 shadow-sm space-y-3 hover:shadow-md transition">
+        <div class="w-10 h-10 rounded-lg bg-white border border-accent flex items-center justify-center text-redflag text-lg font-bold shadow-sm">
+          <i class="fa-solid fa-link"></i>
         </div>
-
-        <form id="report-form" onsubmit="submitCommunityReport(event)" class="space-y-4">
-          <div>
-            <label class="text-xs font-medium text-slate-300 block mb-1">Scam Category (Optional - auto-detected if left empty):</label>
-            <select id="rpt-category" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
-              <option value="">-- Auto-Detect Category --</option>
-              <option value="ELECTRICITY_BILL">Electricity Bill Disconnection (TNEB)</option>
-              <option value="BANKING_FRAUD">Banking / Account Suspension</option>
-              <option value="KYC_EXPIRY">KYC / PAN / Aadhaar Expiry</option>
-              <option value="UPI_FRAUD">UPI / Cashback / Reward Scam</option>
-              <option value="LOTTERY_PRIZE">Lottery / Prize Fraud</option>
-              <option value="JOB_SCAM">Part-Time / Telegram Job Scam</option>
-              <option value="OTP_THEFT">OTP / Credential Theft</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="text-xs font-medium text-slate-300 block mb-1">Scam SMS or Message Received:</label>
-            <textarea id="rpt-message" rows="3" placeholder="e.g. Ungal TNEB bill kattavum udane illaiyendral current vettpadum..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500"></textarea>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label class="text-xs font-medium text-slate-300 block mb-1">Sender Phone Number:</label>
-              <input type="text" id="rpt-phone" placeholder="e.g. 9840123456" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
-            </div>
-            <div>
-              <label class="text-xs font-medium text-slate-300 block mb-1">UPI ID Demanded (if any):</label>
-              <input type="text" id="rpt-upi" placeholder="e.g. fraudster@okhdfcbank" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label class="text-xs font-medium text-slate-300 block mb-1">Suspicious URL / Link:</label>
-              <input type="text" id="rpt-url" placeholder="e.g. http://tneb-payment.xyz" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
-            </div>
-            <div>
-              <label class="text-xs font-medium text-slate-300 block mb-1">Impersonated Organization:</label>
-              <input type="text" id="rpt-org" placeholder="e.g. TNEB, SBI, India Post" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label class="text-xs font-medium text-slate-300 block mb-1">City / Region:</label>
-              <input type="text" id="rpt-city" placeholder="e.g. Chennai" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
-            </div>
-            <div>
-              <label class="text-xs font-medium text-slate-300 block mb-1">Locality / Area:</label>
-              <input type="text" id="rpt-area" placeholder="e.g. Velachery / Adyar" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
-            </div>
-          </div>
-
-          <div>
-            <label class="text-xs font-medium text-slate-300 block mb-1">Incident Description:</label>
-            <input type="text" id="rpt-desc" placeholder="Brief details about what the fraudster asked you to do..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
-          </div>
-
-          <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-lg shadow-rose-600/20">
-            Submit Incident Report
-          </button>
-        </form>
-
-        <div id="report-success" class="hidden mt-4 p-4 rounded-lg bg-emerald-950 border border-emerald-800 text-emerald-300 text-xs"></div>
-      </div>
-    </section>
-
-    <!-- TAB 3: COMMUNITY FEED -->
-    <section id="section-feed" class="hidden space-y-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-base font-bold text-white">Live Community Threat Feed</h2>
-          <p class="text-xs text-slate-400">Crowdsourced fraud reports with privacy-first data minimization.</p>
-        </div>
-        <button onclick="loadReportsFeed()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
-          <i class="fa-solid fa-arrows-rotate"></i> Refresh Feed
-        </button>
-      </div>
-
-      <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 font-semibold uppercase tracking-wider">
-              <tr>
-                <th class="p-3">Report ID</th>
-                <th class="p-3">Category</th>
-                <th class="p-3">Masked Phone</th>
-                <th class="p-3">Masked UPI</th>
-                <th class="p-3">Target Org</th>
-                <th class="p-3">Location</th>
-                <th class="p-3">Risk Score</th>
-                <th class="p-3">Status</th>
-              </tr>
-            </thead>
-            <tbody id="feed-table-body" class="divide-y divide-slate-800 text-slate-300">
-              <tr><td colspan="8" class="p-4 text-center text-slate-500">Loading reports...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 4: CAMPAIGNS & GRAPH VISUALIZER -->
-    <section id="section-graph" class="hidden space-y-4">
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
-          <h2 class="text-base font-bold text-white">Syndicated Fraud Campaigns & Relationship Graph</h2>
-          <p class="text-xs text-slate-400">Clusters multi-vector scams sharing common telephone numbers, UPI IDs, or domain infrastructure.</p>
-        </div>
-        <div class="flex gap-2">
-          <button onclick="loadGraphData()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
-            <i class="fa-solid fa-arrows-rotate"></i> Refresh Graph
-          </button>
-        </div>
-      </div>
-
-      <!-- Graph Visualizer Container -->
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl">
-        <!-- Legend -->
-        <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400 mb-3 border-b border-slate-800 pb-3">
-          <span class="font-semibold text-slate-300">Node Legend:</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> Report</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span> Phone Number</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span> UPI ID</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span> URL / Domain</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span> Brand</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-teal-500 inline-block"></span> Location</span>
-        </div>
-
-        <div id="network-canvas"></div>
-      </div>
-
-      <!-- Active Campaigns List -->
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
-        <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-circle-nodes text-cyan-400"></i> Identified Fraud Campaigns
-        </h3>
-        <div id="campaigns-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <p class="text-xs text-slate-500">Analyzing campaign clusters...</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 5: DEEP INVESTIGATION SEARCH -->
-    <section id="section-investigate" class="hidden max-w-3xl mx-auto space-y-4">
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-        <h2 class="text-base font-bold text-white mb-1 flex items-center gap-2">
-          <i class="fa-solid fa-fingerprint text-cyan-400"></i> Threat Entity Investigation
-        </h2>
-        <p class="text-xs text-slate-400 mb-4">
-          Query any phone number, UPI handle, domain, or report ID to view its complete 2-hop connected threat graph.
+        <h3 class="font-bold text-slate-900 text-sm">URL Heuristics & Brand Lookalikes</h3>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          Analyzes Shannon entropy, subdomain depth, high-abuse TLDs, and fuzzy Levenshtein distance against top banks and utilities.
         </p>
+      </div>
 
-        <div class="flex gap-2 mb-4">
-          <input type="text" id="inv-query" placeholder="Enter Phone (e.g. 9988112233) or UPI or Domain..." class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
-          <button onclick="runInvestigation()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold px-5 py-2 rounded-lg text-sm transition">
-            Investigate
+      <!-- Feature 2 -->
+      <div class="rf-card-tint rounded-xl p-5 shadow-sm space-y-3 hover:shadow-md transition">
+        <div class="w-10 h-10 rounded-lg bg-white border border-accent flex items-center justify-center text-redflag text-lg font-bold shadow-sm">
+          <i class="fa-solid fa-comments"></i>
+        </div>
+        <h3 class="font-bold text-slate-900 text-sm">Multilingual Scam NLP</h3>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          Specialized intent models detecting social-engineering threats across English, Tamil script, and Tanglish transliterations.
+        </p>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="rf-card-tint rounded-xl p-5 shadow-sm space-y-3 hover:shadow-md transition">
+        <div class="w-10 h-10 rounded-lg bg-white border border-accent flex items-center justify-center text-redflag text-lg font-bold shadow-sm">
+          <i class="fa-solid fa-network-wired"></i>
+        </div>
+        <h3 class="font-bold text-slate-900 text-sm">Graph Campaign Clustering</h3>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          Uncovers multi-vector fraud rings by correlating distinct incidents that secretly share telephone numbers, UPI IDs, or domains.
+        </p>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="rf-card-tint rounded-xl p-5 shadow-sm space-y-3 hover:shadow-md transition">
+        <div class="w-10 h-10 rounded-lg bg-white border border-accent flex items-center justify-center text-redflag text-lg font-bold shadow-sm">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <h3 class="font-bold text-slate-900 text-sm">Community Intelligence & Privacy</h3>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          Crowdsourced incident reporting with analyst verification and automatic masking of citizen phone numbers and financial IDs.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- INTERACTIVE TOOL SUITE (TABS) -->
+  <section id="interactive-suite" class="max-w-7xl mx-auto px-4 mb-16 w-full">
+    <div class="bg-white border border-accent rounded-2xl shadow-xl overflow-hidden">
+      
+      <!-- Tab Header Bar -->
+      <div class="bg-tint/70 border-b border-accent px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-800">Intelligence Modules:</span>
+        </div>
+        
+        <div class="flex flex-wrap gap-2">
+          <button onclick="switchTab('report')" id="tab-report" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-redflag text-white shadow-sm">
+            <i class="fa-solid fa-triangle-exclamation"></i> Report Scam
+          </button>
+          <button onclick="switchTab('feed')" id="tab-feed" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-accent hover:bg-slate-50">
+            <i class="fa-solid fa-database"></i> Live Community Feed
+          </button>
+          <button onclick="switchTab('graph')" id="tab-graph" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-accent hover:bg-slate-50">
+            <i class="fa-solid fa-diagram-project"></i> Campaigns & Relationship Graph
+          </button>
+          <button onclick="switchTab('investigate')" id="tab-investigate" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-accent hover:bg-slate-50">
+            <i class="fa-solid fa-user-secret"></i> Deep Entity Investigation
           </button>
         </div>
+      </div>
 
-        <div id="inv-result" class="hidden space-y-4">
-          <div class="p-4 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between">
+      <!-- Tab Body Container -->
+      <div class="p-6 md:p-8">
+
+        <!-- TAB 1: REPORT SCAM FORM -->
+        <div id="section-report" class="max-w-2xl mx-auto space-y-4">
+          <div class="text-center mb-6">
+            <span class="text-xs font-bold text-redflag uppercase tracking-wider">Crowdsource Defense</span>
+            <h3 class="text-xl font-extrabold text-slate-900 mt-1">Report a Scam Incident</h3>
+            <p class="text-xs text-slate-500">Every verified report protects other citizens and strengthens the threat intelligence graph.</p>
+          </div>
+
+          <form id="report-form" onsubmit="submitCommunityReport(event)" class="space-y-4">
             <div>
-              <span class="text-xs text-slate-400">Target Entity:</span>
-              <h4 id="inv-entity-name" class="text-base font-bold text-white mono"></h4>
-              <span id="inv-entity-type" class="text-xs px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-mono inline-block mt-1"></span>
+              <label class="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-1">Scam Category (Optional - auto-detected):</label>
+              <select id="rpt-category" class="w-full bg-canvas border border-accent rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:border-redflag">
+                <option value="">-- Auto-Detect Category --</option>
+                <option value="ELECTRICITY_BILL">Electricity Bill Disconnection (TNEB / Utility)</option>
+                <option value="BANKING_FRAUD">Banking / Account Suspension</option>
+                <option value="KYC_EXPIRY">KYC / PAN / Aadhaar Expiry</option>
+                <option value="UPI_FRAUD">UPI / Cashback / Reward Scam</option>
+                <option value="LOTTERY_PRIZE">Lottery / Prize Fraud</option>
+                <option value="JOB_SCAM">Part-Time / Telegram Job Scam</option>
+                <option value="OTP_THEFT">OTP / Credential Theft</option>
+              </select>
             </div>
-            <div class="text-right">
-              <span class="text-xs text-slate-400 block">Direct Connections</span>
-              <span id="inv-connections" class="text-2xl font-extrabold text-cyan-400 mono"></span>
+
+            <div>
+              <label class="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-1">Scam SMS or Message Received:</label>
+              <textarea id="rpt-message" rows="3" placeholder="e.g. Ungal TNEB bill kattavum udane illaiyendral current vettpadum..." class="w-full bg-canvas border border-accent rounded-xl p-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-redflag"></textarea>
             </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-1">Sender Phone Number:</label>
+                <input type="text" id="rpt-phone" placeholder="e.g. 9840123456" class="w-full bg-canvas border border-accent rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-redflag" />
+              </div>
+              <div>
+                <label class="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-1">UPI ID Demanded (if any):</label>
+                <input type="text" id="rpt-upi" placeholder="e.g. fraudster@okhdfcbank" class="w-full bg-canvas border border-accent rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-redflag" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-1">Suspicious URL / Link:</label>
+                <input type="text" id="rpt-url" placeholder="e.g. http://tneb-payment.xyz" class="w-full bg-canvas border border-accent rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-redflag" />
+              </div>
+              <div>
+                <label class="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-1">Impersonated Organization:</label>
+                <input type="text" id="rpt-org" placeholder="e.g. TNEB, SBI, India Post" class="w-full bg-canvas border border-accent rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-redflag" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-1">City / Region:</label>
+                <input type="text" id="rpt-city" placeholder="e.g. Chennai" class="w-full bg-canvas border border-accent rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-redflag" />
+              </div>
+              <div>
+                <label class="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-1">Locality / Area:</label>
+                <input type="text" id="rpt-area" placeholder="e.g. Velachery / Adyar" class="w-full bg-canvas border border-accent rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-redflag" />
+              </div>
+            </div>
+
+            <div>
+              <label class="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-1">Incident Description:</label>
+              <input type="text" id="rpt-desc" placeholder="Brief context about what the fraudster demanded..." class="w-full bg-canvas border border-accent rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-redflag" />
+            </div>
+
+            <button type="submit" class="w-full bg-redflag hover:bg-red-600 text-white font-bold py-3 rounded-xl text-sm shadow-md shadow-red-500/20 transition cursor-pointer">
+              <i class="fa-solid fa-flag mr-1"></i> Submit RedFlag Report
+            </button>
+          </form>
+
+          <div id="report-success" class="hidden mt-4 p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs"></div>
+        </div>
+
+        <!-- TAB 2: LIVE COMMUNITY FEED -->
+        <div id="section-feed" class="hidden space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-extrabold text-slate-900">Live Community Threat Feed</h3>
+              <p class="text-xs text-slate-500">Crowdsourced reports with privacy-first data masking (phone numbers & UPI IDs masked).</p>
+            </div>
+            <button onclick="loadReportsFeed()" class="bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-accent flex items-center gap-1.5 shadow-sm transition">
+              <i class="fa-solid fa-arrows-rotate"></i> Refresh
+            </button>
           </div>
 
-          <div id="inv-campaigns-box" class="hidden p-3 rounded-lg bg-rose-950/40 border border-rose-900/60 text-xs text-rose-200">
-            <span class="font-bold">⚠️ Linked to Syndicated Campaigns:</span> <span id="inv-campaigns-list"></span>
-          </div>
-
-          <div>
-            <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Connected Neighborhood Subgraph:</h4>
-            <div id="inv-network-canvas"></div>
+          <div class="border border-accent rounded-xl overflow-hidden bg-white shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-tint/70 text-slate-700 border-b border-accent font-bold uppercase tracking-wider">
+                  <tr>
+                    <th class="p-3">Report ID</th>
+                    <th class="p-3">Category</th>
+                    <th class="p-3">Masked Phone</th>
+                    <th class="p-3">Masked UPI</th>
+                    <th class="p-3">Target Org</th>
+                    <th class="p-3">Location</th>
+                    <th class="p-3">Risk Score</th>
+                    <th class="p-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="feed-table-body" class="divide-y divide-accent/60 text-slate-700">
+                  <tr><td colspan="8" class="p-4 text-center text-slate-400">Loading reports...</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
+
+        <!-- TAB 3: CAMPAIGNS & RELATIONSHIP GRAPH -->
+        <div id="section-graph" class="hidden space-y-6">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h3 class="text-base font-extrabold text-slate-900">Syndicated Fraud Campaigns & Graph Intelligence</h3>
+              <p class="text-xs text-slate-500">Network graph clustering multi-vector scams sharing common telephone numbers or UPI infrastructure.</p>
+            </div>
+            <button onclick="loadGraphData()" class="bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-accent flex items-center gap-1.5 shadow-sm transition">
+              <i class="fa-solid fa-arrows-rotate"></i> Refresh Graph
+            </button>
+          </div>
+
+          <!-- Graph Canvas Container -->
+          <div class="bg-slate-900 border border-accent rounded-xl p-4 shadow-xl text-white">
+            <!-- Legend -->
+            <div class="flex flex-wrap items-center gap-4 text-xs text-slate-300 mb-3 border-b border-slate-800 pb-3">
+              <span class="font-bold text-white">Node Legend:</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> Report</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-redflag inline-block"></span> Phone Number</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span> UPI ID</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span> URL / Domain</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span> Brand</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-teal-500 inline-block"></span> Location</span>
+            </div>
+
+            <div id="network-canvas"></div>
+          </div>
+
+          <!-- Active Campaigns Container -->
+          <div>
+            <h4 class="text-sm font-extrabold text-slate-900 mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-circle-nodes text-redflag"></i> Identified Syndicated Campaigns:
+            </h4>
+            <div id="campaigns-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <p class="text-xs text-slate-400">Loading campaign clusters...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: DEEP INVESTIGATION SEARCH -->
+        <div id="section-investigate" class="hidden max-w-3xl mx-auto space-y-4">
+          <div class="text-center mb-6">
+            <span class="text-xs font-bold text-redflag uppercase tracking-wider">Investigator Portal</span>
+            <h3 class="text-xl font-extrabold text-slate-900 mt-1">Deep Threat Entity Search</h3>
+            <p class="text-xs text-slate-500">Query any indicator (Phone, UPI, Domain, or Report ID) to extract its complete 2-hop connected threat neighborhood.</p>
+          </div>
+
+          <div class="flex gap-2">
+            <input type="text" id="inv-query" placeholder="Enter Phone (e.g. 9988112233) or UPI or Domain..." class="flex-1 bg-canvas border border-accent rounded-xl px-4 py-2.5 text-xs md:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-redflag" />
+            <button onclick="runInvestigation()" class="bg-redflag hover:bg-red-600 text-white font-bold px-6 py-2.5 rounded-xl text-xs md:text-sm transition shadow-md shadow-red-500/20 cursor-pointer">
+              Investigate
+            </button>
+          </div>
+
+          <div id="inv-result" class="hidden space-y-4 pt-4">
+            <div class="p-4 rounded-xl bg-tint/60 border border-accent flex items-center justify-between">
+              <div>
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Target Entity</span>
+                <h4 id="inv-entity-name" class="text-base font-extrabold text-slate-900 mono"></h4>
+                <span id="inv-entity-type" class="text-[10px] px-2 py-0.5 rounded bg-white text-slate-800 border border-accent font-mono font-bold inline-block mt-1"></span>
+              </div>
+              <div class="text-right">
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Connected Nodes</span>
+                <span id="inv-connections" class="text-3xl font-extrabold text-redflag mono"></span>
+              </div>
+            </div>
+
+            <div id="inv-campaigns-box" class="hidden p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-900">
+              <span class="font-extrabold"><i class="fa-solid fa-triangle-exclamation text-redflag mr-1"></i> Connected to Campaigns:</span> <span id="inv-campaigns-list"></span>
+            </div>
+
+            <div class="bg-slate-900 border border-accent rounded-xl p-3">
+              <div id="inv-network-canvas"></div>
+            </div>
+          </div>
+        </div>
+
       </div>
-    </section>
+    </div>
+  </section>
 
-  </main>
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-accent mt-auto py-8 text-slate-600 text-xs">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-2">
+        <div class="w-6 h-6 rounded bg-redflag text-white flex items-center justify-center font-bold text-xs">
+          <i class="fa-solid fa-flag"></i>
+        </div>
+        <span class="font-extrabold text-slate-900 text-sm">RedFlag</span>
+        <span class="text-slate-400">&bull; Community Threat Intelligence Platform</span>
+      </div>
+      
+      <div class="flex items-center space-x-6 text-slate-500 font-medium">
+        <a href="/api/v1/docs" target="_blank" class="hover:text-redflag transition">Swagger API</a>
+        <a href="/health" target="_blank" class="hover:text-redflag transition">System Health</a>
+        <span>Palette: #F5F5F5 / #DFF1F1 / #BBD5DA / #FF0000</span>
+      </div>
 
-  <footer class="border-t border-slate-800 bg-slate-900 py-3 text-center text-xs text-slate-500">
-    CyberShield Threat Intelligence &bull; Community Cybersecurity Platform
+      <div class="text-slate-400">
+        &copy; 2026 RedFlag. All rights reserved.
+      </div>
+    </div>
   </footer>
 
   <!-- Application Logic -->

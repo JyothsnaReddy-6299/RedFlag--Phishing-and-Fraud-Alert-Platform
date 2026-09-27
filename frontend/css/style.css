@@ -1,23 +1,80 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --color-canvas: #F5F5F5;
+  --color-tint: #DFF1F1;
+  --color-accent: #BBD5DA;
+  --color-redflag: #FF0000;
+  --color-redflag-hover: #D60000;
+  --color-text-main: #0F172A;
+  --color-text-muted: #475569;
+}
 
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--color-canvas);
+  color: var(--color-text-main);
 }
 
 .mono {
   font-family: 'JetBrains Mono', monospace;
 }
 
+/* Custom Palette Utilities */
+.bg-canvas { background-color: #F5F5F5; }
+.bg-tint { background-color: #DFF1F1; }
+.bg-accent { background-color: #BBD5DA; }
+.bg-redflag { background-color: #FF0000; }
+.bg-redflag:hover { background-color: #D60000; }
+
+.text-redflag { color: #FF0000; }
+.text-main { color: #0F172A; }
+.text-muted { color: #475569; }
+
+.border-accent { border-color: #BBD5DA; }
+.border-redflag { border-color: #FF0000; }
+
+/* Subtle Shadows & Cards */
+.rf-card {
+  background-color: #FFFFFF;
+  border: 1px solid #BBD5DA;
+  box-shadow: 0 4px 20px -2px rgba(187, 213, 218, 0.4);
+}
+
+.rf-card-tint {
+  background-color: #DFF1F1;
+  border: 1px solid #BBD5DA;
+}
+
+/* Graph Canvas Container */
 #network-canvas {
   width: 100%;
   height: 520px;
-  background: #0f172a;
+  background: #0F172A;
   border-radius: 0.75rem;
+  border: 1px solid #BBD5DA;
 }
 
 #inv-network-canvas {
   width: 100%;
-  height: 350px;
-  background: #0f172a;
+  height: 360px;
+  background: #0F172A;
   border-radius: 0.75rem;
+  border: 1px solid #BBD5DA;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F5F5F5;
+}
+::-webkit-scrollbar-thumb {
+  background: #BBD5DA;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94b8bf;
 }
