@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
 :root {
   --color-canvas: #F5F5F5;
@@ -11,9 +11,10 @@
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--color-canvas);
   color: var(--color-text-main);
+  scroll-behavior: smooth;
 }
 
 .mono {
@@ -33,6 +34,27 @@ body {
 
 .border-accent { border-color: #BBD5DA; }
 .border-redflag { border-color: #FF0000; }
+
+/* RedFlag Glowing Hero Button */
+.btn-redflag-glow {
+  background-color: #FF0000;
+  color: #FFFFFF;
+  box-shadow: 0 12px 28px -4px rgba(255, 0, 0, 0.45), 0 8px 10px -6px rgba(255, 0, 0, 0.35);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-redflag-glow:hover {
+  background-color: #E60000;
+  box-shadow: 0 16px 34px -4px rgba(255, 0, 0, 0.55), 0 10px 14px -6px rgba(255, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+.btn-redflag-glow:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 14px -2px rgba(255, 0, 0, 0.4);
+}
+
+.flag-shadow {
+  filter: drop-shadow(0 10px 20px rgba(255, 0, 0, 0.3));
+}
 
 /* Subtle Shadows & Cards */
 .rf-card {

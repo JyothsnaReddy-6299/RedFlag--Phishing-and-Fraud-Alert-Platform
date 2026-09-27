@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RedFlag — Community Cyber Threat Intelligence & Phishing Defense</title>
+  <title>RedFlag — Detect Malicious Links & Scam Messages Instantly</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Vis.js Network for Interactive Graph Visualization -->
@@ -15,111 +15,108 @@
 </head>
 <body class="bg-canvas text-slate-900 min-h-screen flex flex-col antialiased">
 
-  <!-- Top Announcement Bar -->
-  <div class="bg-slate-900 text-white text-xs py-1.5 px-4 text-center border-b border-accent font-medium">
-    <span class="inline-flex items-center gap-1.5">
-      <span class="w-2 h-2 rounded-full bg-redflag animate-pulse"></span>
-      <strong class="text-red-400">RedFlag Active:</strong> Real-time detection for phishing URLs, UPI fraud, and multilingual SMS scams (English, தமிழ், Tanglish).
-    </span>
-  </div>
-
-  <!-- Main Navigation Header -->
-  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-accent shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+  <!-- TOP NAVBAR -->
+  <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-accent shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
       <!-- Brand Logo -->
-      <a href="/" class="flex items-center space-x-3 group">
-        <div class="w-10 h-10 rounded-xl bg-redflag text-white flex items-center justify-center shadow-md shadow-red-500/20 group-hover:scale-105 transition">
-          <i class="fa-solid fa-flag text-lg"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-1.5">
-            <span class="text-xl font-extrabold text-slate-900 tracking-tight">Red<span class="text-redflag">Flag</span></span>
-            <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-tint text-slate-800 border border-accent">INTELLIGENCE</span>
-          </div>
-          <p class="text-[11px] text-slate-500 font-medium">Community Phishing & Fraud Detector</p>
-        </div>
+      <a href="/" class="flex items-center space-x-2.5 group">
+        <!-- Mini Flag Icon -->
+        <svg class="w-6 h-6 text-redflag filter drop-shadow-sm group-hover:scale-105 transition" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4 2.5C4 1.67 4.67 1 5.5 1S7 1.67 7 2.5V4.2C8.6 3.4 10.7 3.3 12.5 4.3C14.7 5.5 16.8 5.4 19 4.3C19.7 3.9 20.5 4.4 20.5 5.2V14.5C20.5 15.1 20 15.6 19.4 15.8C17.3 16.6 15 16.5 13.2 15.5C11.3 14.5 9 14.5 7 15.8V21.5C7 22.33 6.33 23 5.5 23S4 22.33 4 21.5V2.5Z"/>
+        </svg>
+        <span class="text-xl font-extrabold text-slate-900 tracking-tight">Red<span class="text-redflag">Flag</span></span>
       </a>
 
-      <!-- Quick Nav Links -->
+      <!-- Center Nav Links -->
       <nav class="hidden md:flex items-center space-x-1 font-semibold text-xs text-slate-700">
-        <button onclick="scrollToSection('section-scanner')" class="px-3 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5">
-          <i class="fa-solid fa-shield-halved text-redflag"></i> Scanner
+        <button onclick="scrollToSection('section-scanner')" class="px-3.5 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-radar text-redflag"></i> Scanner
         </button>
-        <button onclick="switchTab('report'); scrollToSection('interactive-suite')" class="px-3 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5">
+        <button onclick="switchTab('report'); scrollToSection('interactive-suite')" class="px-3.5 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5 cursor-pointer">
           <i class="fa-solid fa-flag text-redflag"></i> Report Scam
         </button>
-        <button onclick="switchTab('feed'); scrollToSection('interactive-suite')" class="px-3 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5">
+        <button onclick="switchTab('feed'); scrollToSection('interactive-suite')" class="px-3.5 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5 cursor-pointer">
           <i class="fa-solid fa-database text-slate-600"></i> Threat Feed
         </button>
-        <button onclick="switchTab('graph'); scrollToSection('interactive-suite')" class="px-3 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5">
+        <button onclick="switchTab('graph'); scrollToSection('interactive-suite')" class="px-3.5 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5 cursor-pointer">
           <i class="fa-solid fa-diagram-project text-slate-600"></i> Campaigns Graph
         </button>
-        <button onclick="switchTab('investigate'); scrollToSection('interactive-suite')" class="px-3 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5">
-          <i class="fa-solid fa-magnifying-glass text-slate-600"></i> Deep Investigation
+        <button onclick="switchTab('investigate'); scrollToSection('interactive-suite')" class="px-3.5 py-2 rounded-lg hover:bg-tint hover:text-slate-900 transition flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-user-secret text-slate-600"></i> Deep Investigation
         </button>
       </nav>
 
-      <!-- Action Buttons -->
+      <!-- Right Actions -->
       <div class="flex items-center gap-3">
-        <a href="/api/v1/docs" target="_blank" class="text-xs bg-tint hover:bg-slate-200 text-slate-800 font-semibold px-3 py-2 rounded-lg border border-accent flex items-center gap-1.5 transition">
+        <a href="/api/v1/docs" target="_blank" class="hidden sm:flex text-xs bg-tint hover:bg-slate-200 text-slate-800 font-semibold px-3 py-1.5 rounded-lg border border-accent items-center gap-1.5 transition">
           <i class="fa-solid fa-code text-slate-600"></i> API Docs
         </a>
-        <button onclick="scrollToSection('section-scanner')" class="text-xs bg-redflag hover:bg-red-600 text-white font-bold px-4 py-2 rounded-lg shadow-md shadow-red-500/20 flex items-center gap-1.5 transition">
-          <i class="fa-solid fa-bolt"></i> Quick Scan
+        <button onclick="scrollToSection('section-scanner')" class="text-xs bg-redflag hover:bg-red-600 text-white font-bold px-4 py-2 rounded-full shadow-md shadow-red-500/20 flex items-center gap-1.5 transition cursor-pointer">
+          <i class="fa-solid fa-bolt"></i> Analyse Now
         </button>
       </div>
     </div>
   </header>
 
-  <!-- HERO SECTION -->
-  <section class="relative bg-gradient-to-b from-tint/70 via-tint/30 to-canvas pt-12 pb-16 px-4 border-b border-accent">
-    <div class="max-w-7xl mx-auto text-center space-y-4">
+  <!-- HERO SECTION MATCHING REFERENCE EXACTLY -->
+  <section class="min-h-[80vh] flex flex-col items-center justify-center text-center px-4 py-16 bg-canvas relative">
+    <div class="max-w-3xl mx-auto flex flex-col items-center justify-center space-y-6">
       
-      <!-- Eyebrow Badge -->
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-accent shadow-sm text-xs font-semibold text-slate-800">
-        <span class="w-2 h-2 rounded-full bg-redflag"></span>
-        AI-Powered Scam & Phishing Defense Platform
+      <!-- Red Flag Icon (Waving with Drop Shadow) -->
+      <div class="flag-shadow transform hover:scale-105 transition duration-300">
+        <svg class="w-20 h-20 md:w-24 md:h-24 text-redflag" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4 2.5C4 1.67 4.67 1 5.5 1S7 1.67 7 2.5V4.2C8.6 3.4 10.7 3.3 12.5 4.3C14.7 5.5 16.8 5.4 19 4.3C19.7 3.9 20.5 4.4 20.5 5.2V14.5C20.5 15.1 20 15.6 19.4 15.8C17.3 16.6 15 16.5 13.2 15.5C11.3 14.5 9 14.5 7 15.8V21.5C7 22.33 6.33 23 5.5 23S4 22.33 4 21.5V2.5Z"/>
+        </svg>
       </div>
 
-      <!-- Main Headline -->
-      <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-950 tracking-tight max-w-4xl mx-auto leading-tight">
-        Spot the Scam Before It Strikes.<br/>
-        Raise a <span class="text-redflag underline decoration-redflag/40 underline-offset-4">RedFlag</span> in Seconds.
+      <!-- Main Title -->
+      <h1 class="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight font-sans">
+        RedFlag
       </h1>
 
-      <!-- Subheadline -->
-      <p class="text-sm md:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-        Instantly analyze suspicious links, WhatsApp notices, and banking SMS across <strong>English</strong>, <strong>Tamil (தமிழ்)</strong>, and <strong>Tanglish</strong>. Connect related fraud rings using entity relationship graphs and community evidence.
+      <!-- Subtitle -->
+      <p class="text-lg md:text-2xl text-slate-600 font-normal max-w-xl mx-auto leading-relaxed">
+        Detect malicious links and scam messages instantly.
       </p>
 
-      <!-- Stats Ribbon -->
-      <div class="pt-2 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-600 font-medium">
-        <span class="flex items-center gap-1.5"><i class="fa-solid fa-bolt text-redflag"></i> &lt; 50ms Real-time Detection</span>
+      <!-- Pill Button with Glowing Red Shadow -->
+      <div class="pt-4">
+        <button onclick="scrollToSection('section-scanner')" class="btn-redflag-glow font-bold text-base md:text-lg px-10 py-3.5 rounded-full cursor-pointer flex items-center gap-2">
+          Analyse Now
+        </button>
+      </div>
+
+      <!-- Micro Badges -->
+      <div class="pt-6 flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-slate-500">
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-check text-redflag"></i> English, தமிழ் &amp; Tanglish</span>
         <span class="text-slate-300">&bull;</span>
-        <span class="flex items-center gap-1.5"><i class="fa-solid fa-language text-slate-700"></i> English, Tamil & Tanglish NLP</span>
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-check text-redflag"></i> Phone &amp; UPI Tracking</span>
         <span class="text-slate-300">&bull;</span>
-        <span class="flex items-center gap-1.5"><i class="fa-solid fa-network-wired text-slate-700"></i> Graph Campaign Correlation</span>
-        <span class="text-slate-300">&bull;</span>
-        <span class="flex items-center gap-1.5"><i class="fa-solid fa-user-shield text-slate-700"></i> Privacy-First Masking</span>
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-check text-redflag"></i> Fraud Campaign Graph</span>
       </div>
 
     </div>
+
+    <!-- Scroll Down Indicator -->
+    <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-slate-400 animate-bounce cursor-pointer" onclick="scrollToSection('section-scanner')">
+      <i class="fa-solid fa-chevron-down text-lg"></i>
+    </div>
   </section>
 
-  <!-- SECTION 1: EMBEDDED REAL-TIME SCANNER -->
-  <section id="section-scanner" class="max-w-7xl mx-auto px-4 -mt-8 mb-16 relative z-10 w-full">
-    <div class="rf-card rounded-2xl p-6 md:p-8 shadow-xl">
+  <!-- SECTION 1: SCANNER WORKSPACE -->
+  <section id="section-scanner" class="max-w-7xl mx-auto px-4 py-12 w-full">
+    <div class="rf-card rounded-2xl p-6 md:p-8 shadow-xl bg-white border border-accent">
       <div class="flex items-center justify-between pb-4 border-b border-accent mb-6">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-red-50 text-redflag border border-red-200 flex items-center justify-center font-bold text-lg">
             <i class="fa-solid fa-radar"></i>
           </div>
           <div>
-            <h2 class="text-lg font-extrabold text-slate-950">Real-Time Threat Scanner</h2>
-            <p class="text-xs text-slate-500">Scan any URL or message text to detect phishing heuristics and social-engineering traps.</p>
+            <h2 class="text-xl font-extrabold text-slate-950">Real-Time Threat Scanner</h2>
+            <p class="text-xs text-slate-500">Input any URL or message text to detect phishing heuristics and social-engineering traps.</p>
           </div>
         </div>
-        <span class="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-slate-500 bg-canvas px-3 py-1 rounded-full border border-accent">
+        <span class="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-tint px-3 py-1 rounded-full border border-accent">
           <i class="fa-solid fa-shield-check text-emerald-600"></i> Active Engine v1.0
         </span>
       </div>
@@ -130,19 +127,19 @@
           <i class="fa-solid fa-wand-magic-sparkles text-redflag mr-1"></i> Try Real-World Scams:
         </label>
         <div class="flex flex-wrap gap-2">
-          <button onclick="loadSample('tneb_tanglish')" class="text-xs bg-white hover:bg-slate-50 text-amber-900 font-semibold border border-amber-300 px-3 py-1.5 rounded-lg shadow-sm transition">
+          <button onclick="loadSample('tneb_tanglish')" class="text-xs bg-white hover:bg-slate-50 text-amber-900 font-semibold border border-amber-300 px-3 py-1.5 rounded-lg shadow-sm transition cursor-pointer">
             ⚡ Tanglish TNEB Electricity Bill
           </button>
-          <button onclick="loadSample('sbi_english')" class="text-xs bg-white hover:bg-slate-50 text-red-900 font-semibold border border-red-300 px-3 py-1.5 rounded-lg shadow-sm transition">
+          <button onclick="loadSample('sbi_english')" class="text-xs bg-white hover:bg-slate-50 text-red-900 font-semibold border border-red-300 px-3 py-1.5 rounded-lg shadow-sm transition cursor-pointer">
             🏦 SBI KYC Suspension (English)
           </button>
-          <button onclick="loadSample('tamil_script')" class="text-xs bg-white hover:bg-slate-50 text-purple-900 font-semibold border border-purple-300 px-3 py-1.5 rounded-lg shadow-sm transition">
+          <button onclick="loadSample('tamil_script')" class="text-xs bg-white hover:bg-slate-50 text-purple-900 font-semibold border border-purple-300 px-3 py-1.5 rounded-lg shadow-sm transition cursor-pointer">
             ⚡ Tamil Script (மின்சார கட்டணம்)
           </button>
-          <button onclick="loadSample('phish_url')" class="text-xs bg-white hover:bg-slate-50 text-rose-900 font-semibold border border-rose-300 px-3 py-1.5 rounded-lg shadow-sm transition">
+          <button onclick="loadSample('phish_url')" class="text-xs bg-white hover:bg-slate-50 text-rose-900 font-semibold border border-rose-300 px-3 py-1.5 rounded-lg shadow-sm transition cursor-pointer">
             🌐 Lookalike URL (`hdfc-rewards.top`)
           </button>
-          <button onclick="loadSample('legit_url')" class="text-xs bg-white hover:bg-slate-50 text-emerald-900 font-semibold border border-emerald-300 px-3 py-1.5 rounded-lg shadow-sm transition">
+          <button onclick="loadSample('legit_url')" class="text-xs bg-white hover:bg-slate-50 text-emerald-900 font-semibold border border-emerald-300 px-3 py-1.5 rounded-lg shadow-sm transition cursor-pointer">
             ✅ Benign URL (`onlinesbi.sbi`)
           </button>
         </div>
@@ -167,8 +164,8 @@
             <input type="text" id="scan-url" placeholder="e.g. http://sbi-kyc-update-portal.xyz/login" class="w-full bg-canvas border border-accent rounded-xl px-3 py-2.5 text-xs md:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-redflag/40 focus:border-redflag transition" />
           </div>
 
-          <button onclick="runScan()" id="btn-scan" class="w-full bg-redflag hover:bg-red-600 text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 transition cursor-pointer">
-            <i class="fa-solid fa-shield-halved"></i> Analyze Threat Indicators
+          <button onclick="runScan()" id="btn-scan" class="w-full btn-redflag-glow font-bold py-3.5 rounded-xl text-sm shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-shield-halved"></i> Analyse Threat Indicators
           </button>
         </div>
 
@@ -239,12 +236,12 @@
     </div>
   </section>
 
-  <!-- CORE FEATURES / CAPABILITIES SHOWCASE -->
-  <section class="max-w-7xl mx-auto px-4 mb-16 w-full">
+  <!-- CAPABILITIES SHOWCASE -->
+  <section class="max-w-7xl mx-auto px-4 py-8 mb-12 w-full">
     <div class="text-center max-w-2xl mx-auto mb-10">
-      <span class="text-xs font-extrabold uppercase tracking-wider text-redflag">Architecture & Capabilities</span>
-      <h2 class="text-2xl md:text-3xl font-extrabold text-slate-950 mt-1">Built to Uncover Syndicated Fraud</h2>
-      <p class="text-xs md:text-sm text-slate-600 mt-2">Unlike simple spam filters, RedFlag combines algorithmic detection with graph correlation and crowdsourced intelligence.</p>
+      <span class="text-xs font-extrabold uppercase tracking-wider text-redflag">Capabilities</span>
+      <h2 class="text-2xl md:text-3xl font-extrabold text-slate-950 mt-1">Integrated Cyber Threat Defense</h2>
+      <p class="text-xs md:text-sm text-slate-600 mt-2">Combining automated heuristic inspection with relationship graphs and community reporting.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -254,9 +251,9 @@
         <div class="w-10 h-10 rounded-lg bg-white border border-accent flex items-center justify-center text-redflag text-lg font-bold shadow-sm">
           <i class="fa-solid fa-link"></i>
         </div>
-        <h3 class="font-bold text-slate-900 text-sm">URL Heuristics & Brand Lookalikes</h3>
+        <h3 class="font-bold text-slate-900 text-sm">URL Heuristics &amp; Lookalikes</h3>
         <p class="text-xs text-slate-600 leading-relaxed">
-          Analyzes Shannon entropy, subdomain depth, high-abuse TLDs, and fuzzy Levenshtein distance against top banks and utilities.
+          Analyzes Shannon entropy, subdomain depth, high-abuse TLDs, and fuzzy distance against banks and payment services.
         </p>
       </div>
 
@@ -278,7 +275,7 @@
         </div>
         <h3 class="font-bold text-slate-900 text-sm">Graph Campaign Clustering</h3>
         <p class="text-xs text-slate-600 leading-relaxed">
-          Uncovers multi-vector fraud rings by correlating distinct incidents that secretly share telephone numbers, UPI IDs, or domains.
+          Uncovers multi-vector fraud rings by correlating distinct incidents sharing telephone numbers, UPI IDs, or domains.
         </p>
       </div>
 
@@ -287,7 +284,7 @@
         <div class="w-10 h-10 rounded-lg bg-white border border-accent flex items-center justify-center text-redflag text-lg font-bold shadow-sm">
           <i class="fa-solid fa-users"></i>
         </div>
-        <h3 class="font-bold text-slate-900 text-sm">Community Intelligence & Privacy</h3>
+        <h3 class="font-bold text-slate-900 text-sm">Community Privacy First</h3>
         <p class="text-xs text-slate-600 leading-relaxed">
           Crowdsourced incident reporting with analyst verification and automatic masking of citizen phone numbers and financial IDs.
         </p>
@@ -307,16 +304,16 @@
         </div>
         
         <div class="flex flex-wrap gap-2">
-          <button onclick="switchTab('report')" id="tab-report" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-redflag text-white shadow-sm">
+          <button onclick="switchTab('report')" id="tab-report" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-redflag text-white shadow-sm cursor-pointer">
             <i class="fa-solid fa-triangle-exclamation"></i> Report Scam
           </button>
-          <button onclick="switchTab('feed')" id="tab-feed" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-accent hover:bg-slate-50">
+          <button onclick="switchTab('feed')" id="tab-feed" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-accent hover:bg-slate-50 cursor-pointer">
             <i class="fa-solid fa-database"></i> Live Community Feed
           </button>
-          <button onclick="switchTab('graph')" id="tab-graph" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-accent hover:bg-slate-50">
-            <i class="fa-solid fa-diagram-project"></i> Campaigns & Relationship Graph
+          <button onclick="switchTab('graph')" id="tab-graph" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-accent hover:bg-slate-50 cursor-pointer">
+            <i class="fa-solid fa-diagram-project"></i> Campaigns &amp; Relationship Graph
           </button>
-          <button onclick="switchTab('investigate')" id="tab-investigate" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-accent hover:bg-slate-50">
+          <button onclick="switchTab('investigate')" id="tab-investigate" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-accent hover:bg-slate-50 cursor-pointer">
             <i class="fa-solid fa-user-secret"></i> Deep Entity Investigation
           </button>
         </div>
@@ -404,9 +401,9 @@
           <div class="flex items-center justify-between">
             <div>
               <h3 class="text-base font-extrabold text-slate-900">Live Community Threat Feed</h3>
-              <p class="text-xs text-slate-500">Crowdsourced reports with privacy-first data masking (phone numbers & UPI IDs masked).</p>
+              <p class="text-xs text-slate-500">Crowdsourced reports with privacy-first data minimization (phone numbers &amp; UPI IDs masked).</p>
             </div>
-            <button onclick="loadReportsFeed()" class="bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-accent flex items-center gap-1.5 shadow-sm transition">
+            <button onclick="loadReportsFeed()" class="bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-accent flex items-center gap-1.5 shadow-sm transition cursor-pointer">
               <i class="fa-solid fa-arrows-rotate"></i> Refresh
             </button>
           </div>
@@ -438,10 +435,10 @@
         <div id="section-graph" class="hidden space-y-6">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h3 class="text-base font-extrabold text-slate-900">Syndicated Fraud Campaigns & Graph Intelligence</h3>
+              <h3 class="text-base font-extrabold text-slate-900">Syndicated Fraud Campaigns &amp; Graph Intelligence</h3>
               <p class="text-xs text-slate-500">Network graph clustering multi-vector scams sharing common telephone numbers or UPI infrastructure.</p>
             </div>
-            <button onclick="loadGraphData()" class="bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-accent flex items-center gap-1.5 shadow-sm transition">
+            <button onclick="loadGraphData()" class="bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-accent flex items-center gap-1.5 shadow-sm transition cursor-pointer">
               <i class="fa-solid fa-arrows-rotate"></i> Refresh Graph
             </button>
           </div>
@@ -483,7 +480,7 @@
 
           <div class="flex gap-2">
             <input type="text" id="inv-query" placeholder="Enter Phone (e.g. 9988112233) or UPI or Domain..." class="flex-1 bg-canvas border border-accent rounded-xl px-4 py-2.5 text-xs md:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-redflag" />
-            <button onclick="runInvestigation()" class="bg-redflag hover:bg-red-600 text-white font-bold px-6 py-2.5 rounded-xl text-xs md:text-sm transition shadow-md shadow-red-500/20 cursor-pointer">
+            <button onclick="runInvestigation()" class="btn-redflag-glow font-bold px-6 py-2.5 rounded-full text-xs md:text-sm cursor-pointer">
               Investigate
             </button>
           </div>
@@ -517,11 +514,11 @@
 
   <!-- FOOTER -->
   <footer class="bg-white border-t border-accent mt-auto py-8 text-slate-600 text-xs">
-    <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
       <div class="flex items-center space-x-2">
-        <div class="w-6 h-6 rounded bg-redflag text-white flex items-center justify-center font-bold text-xs">
-          <i class="fa-solid fa-flag"></i>
-        </div>
+        <svg class="w-5 h-5 text-redflag" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4 2.5C4 1.67 4.67 1 5.5 1S7 1.67 7 2.5V4.2C8.6 3.4 10.7 3.3 12.5 4.3C14.7 5.5 16.8 5.4 19 4.3C19.7 3.9 20.5 4.4 20.5 5.2V14.5C20.5 15.1 20 15.6 19.4 15.8C17.3 16.6 15 16.5 13.2 15.5C11.3 14.5 9 14.5 7 15.8V21.5C7 22.33 6.33 23 5.5 23S4 22.33 4 21.5V2.5Z"/>
+        </svg>
         <span class="font-extrabold text-slate-900 text-sm">RedFlag</span>
         <span class="text-slate-400">&bull; Community Threat Intelligence Platform</span>
       </div>
@@ -529,7 +526,7 @@
       <div class="flex items-center space-x-6 text-slate-500 font-medium">
         <a href="/api/v1/docs" target="_blank" class="hover:text-redflag transition">Swagger API</a>
         <a href="/health" target="_blank" class="hover:text-redflag transition">System Health</a>
-        <span>Palette: #F5F5F5 / #DFF1F1 / #BBD5DA / #FF0000</span>
+        <span class="text-slate-400 font-mono text-[11px]">#F5F5F5 &bull; #DFF1F1 &bull; #BBD5DA &bull; #FF0000</span>
       </div>
 
       <div class="text-slate-400">
