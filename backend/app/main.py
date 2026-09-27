@@ -39,10 +39,10 @@ def health_check():
         "phase": "Phase 3 - Graph & Campaigns Active"
     }
 
-# Mount Static frontend UI
-static_dir = os.path.join(os.path.dirname(__file__), "static")
-if os.path.exists(static_dir):
-    app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+# Mount Static frontend UI from frontend directory
+frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend"))
+if os.path.exists(frontend_dir):
+    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn
