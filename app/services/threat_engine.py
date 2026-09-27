@@ -30,12 +30,76 @@ class ThreatIntelligenceEngine:
         self.upis_db = KNOWN_FRAUD_UPIS
         self.phones_db = KNOWN_FRAUD_PHONES
 
-    def check_entities(self, entities: ExtractedEntities) -> Dict[str, Any]:
+    def check_entities(self, entities: ExtractedEntities, db=None) -> Dict[str, Any]:
         matched_indicators = []
         threat_score_boost = 0.0
         reputation_verdict = "NEUTRAL"
         sources = []
 
+        # 1. Check verified indicators in Database (Dynamic Intelligence Accumulation)
+        if db is not None:
+            try:
+                from app.db.models import ThreatIndicator
+                # Check DB for domains
+                for domain in entities.domains:
+                    db_ind = db.query(ThreatIndicator).filter(
+                        ThreatIndicator.indicator_type == "DOMAIN",
+                        ThreatIndicator.indicator_value == domain.lower(),
+                        ThreatIndicator.status == "VERIFIED_MALICIOUS"
+                    ).first()
+                    if db_ind:
+                        matched_indicators.append({
+                            "type": "DOMAIN",
+                            "value": domain.lower(),
+                            "category": db_ind.category or "MALICIOUS",
+                            "source": f"CommunityThreatDB ({db_ind.report_count} verified reports)",
+                            "confidence": 0.99
+                        })
+                        threat_score_boost += 50.0
+                        sources.append(f"Verified Threat Database ({db_ind.report_count} reports)")
+                        reputation_verdict = "CONFIRMED_MALICIOUS"
+
+                # Check DB for UPIs
+                for upi in entities.upi_ids:
+                    db_ind = db.query(ThreatIndicator).filter(
+                        ThreatIndicator.indicator_type == "UPI",
+                        ThreatIndicator.indicator_value == upi.lower(),
+                        ThreatIndicator.status == "VERIFIED_MALICIOUS"
+                    ).first()
+                    if db_ind:
+                        matched_indicators.append({
+                            "type": "UPI_ID",
+                            "value": upi.lower(),
+                            "category": db_ind.category or "UPI_FRAUD",
+                            "source": f"CommunityThreatDB ({db_ind.report_count} verified reports)",
+                            "confidence": 0.98
+                        })
+                        threat_score_boost += 45.0
+                        sources.append(f"Verified Threat Database ({db_ind.report_count} reports)")
+                        reputation_verdict = "CONFIRMED_MALICIOUS"
+
+                # Check DB for Phone Numbers
+                for phone in entities.phone_numbers:
+                    db_ind = db.query(ThreatIndicator).filter(
+                        ThreatIndicator.indicator_type == "PHONE",
+                        ThreatIndicator.indicator_value == phone,
+                        ThreatIndicator.status == "VERIFIED_MALICIOUS"
+                    ).first()
+                    if db_ind:
+                        matched_indicators.append({
+                            "type": "PHONE_NUMBER",
+                            "value": phone,
+                            "category": db_ind.category or "FRAUD",
+                            "source": f"CommunityThreatDB ({db_ind.report_count} verified reports)",
+                            "confidence": 0.98
+                        })
+                        threat_score_boost += 45.0
+                        sources.append(f"Verified Threat Database ({db_ind.report_count} reports)")
+                        reputation_verdict = "CONFIRMED_MALICIOUS"
+            except Exception:
+                pass
+
+        # 2. Check Static Seed Feeds
         # Check domains
         for domain in entities.domains:
             domain_clean = domain.lower()

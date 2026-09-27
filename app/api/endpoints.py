@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from app.db.session import get_db
 from app.models.schemas import (
     URLScanRequest,
     URLScanResponse,
@@ -17,7 +19,7 @@ from app.services.risk_scorer import risk_scorer
 router = APIRouter()
 
 @router.post("/scan/url", response_model=URLScanResponse)
-def scan_url(request: URLScanRequest):
+def scan_url(request: URLScanRequest, db: Session = Depends(get_db)):
     """
     Analyzes a URL using structural heuristics, entropy, brand impersonation checks,
     and threat intelligence cross-referencing.
@@ -27,7 +29,7 @@ def scan_url(request: URLScanRequest):
 
     url_analysis = url_analyzer.analyze(request.url)
     entities = entity_extractor.extract_all(request.url)
-    threat_match = threat_engine.check_entities(entities)
+    threat_match = threat_engine.check_entities(entities, db=db)
     
     risk_assessment = risk_scorer.evaluate(
         url_analysis=url_analysis,
@@ -42,7 +44,7 @@ def scan_url(request: URLScanRequest):
     )
 
 @router.post("/scan/message", response_model=MessageScanResponse)
-def scan_message(request: MessageScanRequest):
+def scan_message(request: MessageScanRequest, db: Session = Depends(get_db)):
     """
     Analyzes an SMS/text message in English, Tamil, or Tanglish for social engineering,
     urgency, impersonation, and fraud indicators.
@@ -51,7 +53,7 @@ def scan_message(request: MessageScanRequest):
         raise HTTPException(status_code=400, detail="Message text cannot be empty")
 
     msg_analysis = message_analyzer.analyze(request.message)
-    threat_match = threat_engine.check_entities(msg_analysis.extracted_entities)
+    threat_match = threat_engine.check_entities(msg_analysis.extracted_entities, db=db)
     
     risk_assessment = risk_scorer.evaluate(
         message_analysis=msg_analysis,
@@ -65,7 +67,7 @@ def scan_message(request: MessageScanRequest):
     )
 
 @router.post("/scan/unified", response_model=UnifiedScanResponse)
-def scan_unified(request: UnifiedScanRequest):
+def scan_unified(request: UnifiedScanRequest, db: Session = Depends(get_db)):
     """
     Unified multi-vector scanner: extracts embedded URLs from text, performs concurrent
     structural heuristics, multilingual NLP analysis, and correlates all entities.
@@ -88,7 +90,7 @@ def scan_unified(request: UnifiedScanRequest):
     msg_analysis = message_analyzer.analyze(text) if text else None
 
     # Threat engine check
-    threat_match = threat_engine.check_entities(entities)
+    threat_match = threat_engine.check_entities(entities, db=db)
 
     # Risk scoring
     risk_assessment = risk_scorer.evaluate(
