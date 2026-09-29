@@ -28,6 +28,17 @@ class URLComponents(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class HomographAnalysis(BaseModel):
+    has_punycode: bool
+    has_unicode: bool
+    is_mixed_script: bool
+    detected_scripts: List[str] = Field(default_factory=list)
+    confusables_detected: List[Dict[str, str]] = Field(default_factory=list)
+    homograph_risk: str
+    summary_message: str
+
+    model_config = ConfigDict(from_attributes=True)
+
 class URLFeatureAnalysis(BaseModel):
     url: str
     original_url: Optional[str] = None
@@ -47,6 +58,12 @@ class URLFeatureAnalysis(BaseModel):
     query: Optional[str] = None
     fragment: Optional[str] = None
     components: Optional[URLComponents] = None
+    homograph_risk: Optional[str] = None
+    is_mixed_script: bool = False
+    confusables_detected: List[Dict[str, str]] = Field(default_factory=list)
+    detected_scripts: List[str] = Field(default_factory=list)
+    homograph_summary: Optional[str] = None
+    homograph_analysis: Optional[HomographAnalysis] = None
     ip_based: bool
     url_length: int
     domain_length: int
@@ -89,6 +106,12 @@ class URLScanResponse(BaseModel):
     fragment: Optional[str] = None
     components: Optional[URLComponents] = None
     punycode_domain: Optional[str] = None
+    homograph_risk: Optional[str] = None
+    is_mixed_script: bool = False
+    confusables_detected: List[Dict[str, str]] = Field(default_factory=list)
+    detected_scripts: List[str] = Field(default_factory=list)
+    homograph_summary: Optional[str] = None
+    homograph_analysis: Optional[HomographAnalysis] = None
     stripped_tracking_params: List[str] = Field(default_factory=list)
     risk_score: int = Field(..., ge=0, le=100)
     risk_level: RiskLevel

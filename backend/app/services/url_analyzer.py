@@ -1,7 +1,7 @@
 import math
 import re
 from typing import List, Tuple, Optional, Dict
-from app.models.schemas import URLFeatureAnalysis, URLComponents
+from app.models.schemas import URLFeatureAnalysis, URLComponents, HomographAnalysis
 from app.services.url_normalizer import url_normalizer, URLComponents as URLComponentsData
 
 SUSPICIOUS_TLDS = {
@@ -370,8 +370,20 @@ class URLAnalyzer:
             signals.append(f"Verified Official Portal: Belongs to {official_brand} authorized domain registry")
             base_risk_score = 0.0
         else:
-            # Check IDN Homograph attack (Punycode spoofing)
-            if norm.has_homograph_attack:
+            # Check IDN Homograph attack & Confusable characters
+            if norm.homograph_analysis:
+                signals.extend(norm.homograph_analysis.signals)
+                if norm.homograph_risk in ["SUSPICIOUS", "CRITICAL"]:
+                    score += norm.homograph_analysis.base_risk_penalty
+                    if not impersonated_brand and norm.confusables_detected:
+                        for b in TARGET_BRANDS:
+                            if b in norm.unicode_domain.lower():
+                                impersonated_brand = b.upper()
+                                similarity_score = 0.98
+                                break
+                elif norm.homograph_risk == "LOW":
+                    score += norm.homograph_analysis.base_risk_penalty
+            elif norm.has_homograph_attack:
                 signals.append(f"IDN Homograph attack detected (Punycode spoofing: '{norm.punycode_domain}' disguising as '{norm.unicode_domain}')")
                 score += 55.0
 
@@ -457,6 +469,16 @@ class URLAnalyzer:
             fragment=fragment,
         )
 
+        homograph_model = HomographAnalysis(
+            has_punycode=norm.has_punycode,
+            has_unicode=norm.has_unicode,
+            is_mixed_script=norm.is_mixed_script,
+            detected_scripts=norm.detected_scripts,
+            confusables_detected=norm.confusables_detected,
+            homograph_risk=norm.homograph_risk,
+            summary_message=norm.homograph_summary,
+        ) if norm.homograph_analysis else None
+
         return URLFeatureAnalysis(
             url=norm.normalized_url,
             original_url=norm.original_url,
@@ -476,6 +498,12 @@ class URLAnalyzer:
             query=query,
             fragment=fragment,
             components=components_model,
+            homograph_risk=norm.homograph_risk,
+            is_mixed_script=norm.is_mixed_script,
+            confusables_detected=norm.confusables_detected,
+            detected_scripts=norm.detected_scripts,
+            homograph_summary=norm.homograph_summary,
+            homograph_analysis=homograph_model,
             ip_based=norm.is_ip_address,
             url_length=len(norm.normalized_url),
             domain_length=len(norm.canonical_domain),

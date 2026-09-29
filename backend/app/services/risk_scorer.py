@@ -26,6 +26,12 @@ class URLRiskScorer:
                 fragment=features.fragment,
                 components=features.components,
                 punycode_domain=features.punycode_domain,
+                homograph_risk=features.homograph_risk,
+                is_mixed_script=features.is_mixed_script,
+                confusables_detected=features.confusables_detected,
+                detected_scripts=features.detected_scripts,
+                homograph_summary=features.homograph_summary,
+                homograph_analysis=features.homograph_analysis,
                 stripped_tracking_params=features.stripped_tracking_params,
                 risk_score=0,
                 risk_level=RiskLevel.SAFE_LOW,
@@ -57,9 +63,9 @@ class URLRiskScorer:
         # Determine Category
         if is_threat_match:
             category = URLCategory.KNOWN_PHISHING
-        elif features.has_homograph_attack or features.brand_impersonated:
+        elif features.has_homograph_attack or features.homograph_risk in ["SUSPICIOUS", "CRITICAL"] or features.brand_impersonated:
             category = URLCategory.BRAND_IMPERSONATION
-            confidence = max(confidence, 0.95 if features.has_homograph_attack else 0.90)
+            confidence = max(confidence, 0.95 if (features.has_homograph_attack or features.homograph_risk in ["SUSPICIOUS", "CRITICAL"]) else 0.90)
         elif features.ip_based:
             category = URLCategory.IP_BASED_ATTACK
             confidence = max(confidence, 0.85)
@@ -89,9 +95,12 @@ class URLRiskScorer:
             advice.append("If received via SMS or email, report the message to your local cyber security reporting channel.")
         else:
             level = RiskLevel.CRITICAL
-            if features.has_homograph_attack:
-                explanation = f"CRITICAL THREAT: IDN Homograph attack ({features.punycode_domain}). Uses foreign unicode lookalike characters to spoof a legitimate service."
-                advice.append("This domain uses deceptive internationalized characters (homoglyphs) to trick users into believing it is authentic.")
+            if features.homograph_risk in ["SUSPICIOUS", "CRITICAL"] or features.has_homograph_attack:
+                explanation = f"CRITICAL THREAT: HOMOGRAPH RISK — Mixed/Confusable characters detected ({features.punycode_domain or features.domain}). Uses deceptive internationalized lookalike characters to spoof an authentic domain."
+                advice.append("HOMOGRAPH RISK: Mixed/Confusable characters detected. Do not enter credentials on this domain.")
+                if features.confusables_detected:
+                    sample = features.confusables_detected[0]
+                    advice.append(f"Visual spoofing detected: '{sample.get('char')}' ({sample.get('script')}) mimics Latin '{sample.get('target_char')}'.")
             elif features.brand_impersonated:
                 explanation = f"CRITICAL THREAT: Deceptive link falsely mimicking {features.brand_impersonated} via lookalike domain, anagram, or typosquatting transposition."
                 advice.append(f"This domain deceptively mimics {features.brand_impersonated}. Do NOT enter account credentials, passwords, or OTPs.")
@@ -116,6 +125,12 @@ class URLRiskScorer:
             fragment=features.fragment,
             components=features.components,
             punycode_domain=features.punycode_domain,
+            homograph_risk=features.homograph_risk,
+            is_mixed_script=features.is_mixed_script,
+            confusables_detected=features.confusables_detected,
+            detected_scripts=features.detected_scripts,
+            homograph_summary=features.homograph_summary,
+            homograph_analysis=features.homograph_analysis,
             stripped_tracking_params=features.stripped_tracking_params,
             risk_score=final_score,
             risk_level=level,

@@ -20,6 +20,24 @@ export interface URLComponents {
   fragment: string;
 }
 
+export interface ConfusableDetail {
+  char: string;
+  codepoint: string;
+  script: string;
+  target_char: string;
+  name: string;
+}
+
+export interface HomographAnalysis {
+  has_punycode: boolean;
+  has_unicode: boolean;
+  is_mixed_script: boolean;
+  detected_scripts: string[];
+  confusables_detected: ConfusableDetail[];
+  homograph_risk: 'NONE' | 'LOW' | 'SUSPICIOUS' | 'CRITICAL';
+  summary_message: string;
+}
+
 export interface URLFeatureAnalysis {
   url: string;
   original_url?: string;
@@ -37,6 +55,12 @@ export interface URLFeatureAnalysis {
   components?: URLComponents;
   punycode_domain?: string;
   unicode_domain?: string;
+  homograph_risk?: 'NONE' | 'LOW' | 'SUSPICIOUS' | 'CRITICAL';
+  is_mixed_script?: boolean;
+  confusables_detected?: ConfusableDetail[];
+  detected_scripts?: string[];
+  homograph_summary?: string;
+  homograph_analysis?: HomographAnalysis;
   protocol: string;
   port: number | null;
   ip_based: boolean;
@@ -77,6 +101,12 @@ export interface URLScanResponse {
   fragment?: string;
   components?: URLComponents;
   punycode_domain?: string;
+  homograph_risk?: 'NONE' | 'LOW' | 'SUSPICIOUS' | 'CRITICAL';
+  is_mixed_script?: boolean;
+  confusables_detected?: ConfusableDetail[];
+  detected_scripts?: string[];
+  homograph_summary?: string;
+  homograph_analysis?: HomographAnalysis;
   stripped_tracking_params?: string[];
   risk_score: number;
   risk_level: RiskLevel;

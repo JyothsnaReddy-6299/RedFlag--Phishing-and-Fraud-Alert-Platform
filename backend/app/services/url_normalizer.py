@@ -3,6 +3,7 @@ import urllib.parse
 import posixpath
 from dataclasses import dataclass, field
 from typing import List, Tuple, Optional, Set, Dict, Any
+from app.services.homograph_detector import homograph_detector, HomographAnalysisResult
 
 # RFC 3986 Section 2.3 - Unreserved characters (ALPHA / DIGIT / "-" / "." / "_" / "~")
 UNRESERVED_ASCII: Set[int] = set(
@@ -203,6 +204,14 @@ class NormalizedURLResult:
     query: str
     fragment: str
     components: URLComponents
+    homograph_analysis: Optional[HomographAnalysisResult] = None
+    homograph_risk: str = "NONE"
+    is_mixed_script: bool = False
+    confusables_detected: List[Dict[str, str]] = field(default_factory=list)
+    detected_scripts: List[str] = field(default_factory=list)
+    has_unicode: bool = False
+    has_punycode: bool = False
+    homograph_summary: str = ""
     stripped_tracking_params: List[str] = field(default_factory=list)
     has_homograph_attack: bool = False
     is_ip_address: bool = False
@@ -282,22 +291,26 @@ class URLNormalizer:
 
         # 6. IDN / Punycode & Homoglyph detection
         is_ip = bool(re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", hostname))
-        has_homograph = False
-        punycode_domain = hostname
-        unicode_domain = hostname
-
         if not is_ip and hostname:
-            try:
-                punycode_domain = hostname.encode("idna").decode("ascii")
-                unicode_domain = punycode_domain.encode("ascii").decode("idna")
+            homograph_res = homograph_detector.analyze(hostname)
+        else:
+            homograph_res = HomographAnalysisResult(
+                has_punycode=False,
+                has_unicode=False,
+                is_mixed_script=False,
+                detected_scripts=[],
+                confusables_detected=[],
+                homograph_risk="NONE",
+                summary_message="IP or empty hostname",
+                signals=[],
+                base_risk_penalty=0.0,
+                unicode_host=hostname,
+                punycode_host=hostname,
+            )
 
-                if punycode_domain.startswith("xn--") or ".xn--" in punycode_domain:
-                    has_homograph = True
-                elif any(ord(c) > 127 for c in hostname):
-                    has_homograph = True
-            except Exception:
-                punycode_domain = hostname
-                unicode_domain = hostname
+        punycode_domain = homograph_res.punycode_host or hostname
+        unicode_domain = homograph_res.unicode_host or hostname
+        has_homograph = homograph_res.homograph_risk in ["SUSPICIOUS", "CRITICAL"]
 
         # Also compute punycode for canonical domain if applicable
         puny_canonical = canonical_domain
@@ -371,6 +384,14 @@ class URLNormalizer:
             query=clean_query,
             fragment=fragment,
             components=components,
+            homograph_analysis=homograph_res,
+            homograph_risk=homograph_res.homograph_risk,
+            is_mixed_script=homograph_res.is_mixed_script,
+            confusables_detected=homograph_res.confusables_detected,
+            detected_scripts=homograph_res.detected_scripts,
+            has_unicode=homograph_res.has_unicode,
+            has_punycode=homograph_res.has_punycode,
+            homograph_summary=homograph_res.summary_message,
             stripped_tracking_params=stripped_tracking,
             has_homograph_attack=has_homograph,
             is_ip_address=is_ip,

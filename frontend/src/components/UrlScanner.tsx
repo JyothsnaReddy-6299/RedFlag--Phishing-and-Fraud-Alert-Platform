@@ -244,15 +244,73 @@ export const UrlScanner = forwardRef<HTMLDivElement, UrlScannerProps>((_, ref) =
                     </div>
                   )}
 
-                  {/* IDN Homograph Spoofing alert badge if detected */}
-                  {result.url_features?.has_homograph_attack && (
-                    <div className="flex items-center gap-2 text-xs font-bold text-red-700 bg-red-100 border border-red-200 px-2.5 py-1.5 rounded-lg mt-1">
-                      <AlertTriangle size={14} className="text-[#D10000] shrink-0" />
-                      <span>
-                        Punycode IDN Homograph Attack: <span className="font-mono">{result.url_features.punycode_domain}</span>
-                      </span>
+                  {/* HOMOGRAPH RISK & CONFUSABLES CARD / BANNER */}
+                  {result.homograph_risk === 'CRITICAL' || result.homograph_risk === 'SUSPICIOUS' || result.url_features?.has_homograph_attack ? (
+                    <div className="p-3 rounded-xl bg-red-50 border border-red-300 mt-2 space-y-1.5 animate-fadeIn">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-[#D10000] text-white">
+                          HOMOGRAPH RISK
+                        </span>
+                        <span className="text-xs font-black text-[#D10000]">
+                          Mixed/Confusable characters detected
+                        </span>
+                      </div>
+
+                      <div className="text-xs text-slate-700 flex flex-wrap items-center gap-x-4 gap-y-1">
+                        {result.url_features?.detected_scripts && result.url_features.detected_scripts.length > 0 && (
+                          <span>
+                            <span className="font-semibold text-slate-500">Mixed Scripts:</span>{' '}
+                            <span className="font-mono font-bold text-red-800">
+                              {result.url_features.detected_scripts.join(' + ')}
+                            </span>
+                          </span>
+                        )}
+
+                        {result.url_features?.punycode_domain && result.url_features.punycode_domain.startsWith('xn--') && (
+                          <span>
+                            <span className="font-semibold text-slate-500">Punycode (xn--):</span>{' '}
+                            <span className="font-mono font-bold text-slate-800">
+                              {result.url_features.punycode_domain}
+                            </span>
+                          </span>
+                        )}
+
+                        {result.url_features?.unicode_domain && (
+                          <span>
+                            <span className="font-semibold text-slate-500">Unicode Host:</span>{' '}
+                            <span className="font-mono font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                              {result.url_features.unicode_domain}
+                            </span>
+                          </span>
+                        )}
+                      </div>
+
+                      {result.url_features?.confusables_detected && result.url_features.confusables_detected.length > 0 && (
+                        <div className="pt-1 border-t border-red-200/60 flex items-center gap-1.5 flex-wrap text-xs text-slate-700">
+                          <span className="text-[10px] font-bold uppercase text-red-700">Lookalike Homoglyphs:</span>
+                          {result.url_features.confusables_detected.map((conf, idx) => (
+                            <span key={idx} className="bg-red-100 text-red-900 px-1.5 py-0.5 rounded text-[11px] font-mono border border-red-200" title={`${conf.name} (${conf.codepoint}) mimics Latin '${conf.target_char}'`}>
+                              '{conf.char}' ({conf.script} {conf.codepoint}) &rarr; '{conf.target_char}'
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ) : result.homograph_risk === 'LOW' || result.url_features?.homograph_analysis?.has_unicode ? (
+                    <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 mt-2 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white">
+                          IDN UNICODE DOMAIN
+                        </span>
+                        <span className="text-xs font-semibold text-blue-900">
+                          Valid single-script Unicode hostname (non-confusable)
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 font-mono">
+                        Punycode: {result.url_features?.punycode_domain || result.punycode_domain}
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
