@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { AnalysisPortal } from './components/AnalysisPortal';
-import { ThreatDatabase } from './components/ThreatDatabase';
+import { Features } from './components/Features';
 import { Footer } from './components/Footer';
 import { checkBackendHealth } from './services/api';
 
@@ -42,11 +42,11 @@ export function App() {
       <main className="flex-grow">
         {currentPage === 'home' ? (
           <>
-            {/* Landing Hero Section matching User Reference Image 1 */}
+            {/* Landing Hero Section */}
             <Hero onAnalyseClick={() => handleNavigate('analyse', 'link')} />
 
-            {/* Live Seed Threat Feeds */}
-            <ThreatDatabase />
+            {/* Defense Architecture Features Cards */}
+            <Features />
           </>
         ) : (
           /* Dedicated Analysis Portal Page with Link & SMS options */

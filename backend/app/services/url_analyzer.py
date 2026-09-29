@@ -1,8 +1,8 @@
 import math
 import re
-from urllib.parse import urlparse
 from typing import List, Tuple, Optional, Dict
 from app.models.schemas import URLFeatureAnalysis
+from app.services.url_normalizer import url_normalizer
 
 SUSPICIOUS_TLDS = {
     "xyz", "top", "club", "work", "click", "buzz", "rest", "cam", "live",
@@ -309,29 +309,21 @@ class URLAnalyzer:
         return (None, 0.0, [])
 
     def analyze(self, raw_url: str) -> URLFeatureAnalysis:
-        raw_url = raw_url.strip()
-        if not raw_url.startswith(("http://", "https://")):
-            full_url = "http://" + raw_url
-        else:
-            full_url = raw_url
-
-        parsed = urlparse(full_url)
-        protocol = parsed.scheme.lower()
-        netloc = parsed.netloc.lower()
-        port = parsed.port
-
-        # Strip port from netloc for domain analysis
-        domain = netloc.split(":")[0]
-        if domain.startswith("www."):
-            domain = domain[4:]
-
-        path = parsed.path.lower()
+        # 0. RFC-compliant URL Normalization Layer
+        norm = url_normalizer.normalize(raw_url)
+        full_url = norm.normalized_url
+        domain = norm.canonical_domain
+        protocol = norm.scheme
+        port = norm.port
+        path = norm.path.lower()
 
         # Check official domain status FIRST
         is_official, official_brand = self.check_official_domain(domain)
+        if not is_official and norm.hostname != domain:
+            is_official, official_brand = self.check_official_domain(norm.hostname)
 
         # 1. IP-based Host detection
-        ip_based = bool(self.ip_pattern.match(full_url)) or bool(re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', domain))
+        ip_based = norm.is_ip_address or bool(self.ip_pattern.match(full_url))
 
         # 2. Subdomains
         parts = domain.split(".")
@@ -344,15 +336,16 @@ class URLAnalyzer:
         # 4. Special Characters & Obfuscation
         special_chars = set("@-_~%&=?")
         special_char_count = sum(1 for c in full_url if c in special_chars)
-        has_at_symbol = "@" in full_url
-        has_double_slash = "//" in path
-        has_hex_encoding = bool(self.hex_encoding_pattern.search(full_url))
+        orig_body = norm.original_url.split("://", 1)[-1] if "://" in norm.original_url else norm.original_url
+        has_at_symbol = "@" in norm.original_url
+        has_double_slash = "//" in orig_body
+        has_hex_encoding = bool(self.hex_encoding_pattern.search(norm.original_url))
 
         # 5. Shannon Entropy
         entropy = calculate_shannon_entropy(domain)
 
         # 6. Sensitive keywords
-        found_keywords = [kw for kw in SUSPICIOUS_KEYWORDS if kw in full_url.lower()]
+        found_keywords = [kw for kw in SUSPICIOUS_KEYWORDS if kw in full_url.lower() or kw in norm.original_url.lower()]
 
         # 7. Brand Impersonation check (Only if domain is NOT verified official)
         impersonated_brand = None
@@ -371,6 +364,11 @@ class URLAnalyzer:
             signals.append(f"Verified Official Portal: Belongs to {official_brand} authorized domain registry")
             base_risk_score = 0.0
         else:
+            # Check IDN Homograph attack (Punycode spoofing)
+            if norm.has_homograph_attack:
+                signals.append(f"IDN Homograph attack detected (Punycode spoofing: '{norm.punycode_domain}' disguising as '{norm.unicode_domain}')")
+                score += 55.0
+
             # Check unauthorized .bank.in usage
             if domain.endswith(".bank.in"):
                 signals.append("Unauthorized or unregistered entity claiming '.bank.in' namespace")
@@ -396,8 +394,8 @@ class URLAnalyzer:
                 signals.append(f"Domain uses high-abuse top-level domain (.{tld}) commonly seen in throwaway phishing")
                 score += 20.0
 
-            if len(full_url) > 75:
-                signals.append(f"Excessive URL length ({len(full_url)} characters) indicating token stuffing or cloaking")
+            if len(norm.original_url) > 75:
+                signals.append(f"Excessive URL length ({len(norm.original_url)} characters) indicating token stuffing or cloaking")
                 score += 15.0
 
             if subdomain_count >= 3:
@@ -431,13 +429,19 @@ class URLAnalyzer:
             base_risk_score = min(100.0, max(0.0, round(score, 1)))
 
         return URLFeatureAnalysis(
-            url=full_url,
-            domain=domain,
-            protocol=protocol,
-            port=port,
-            ip_based=ip_based,
-            url_length=len(full_url),
-            domain_length=len(domain),
+            url=norm.normalized_url,
+            original_url=norm.original_url,
+            normalized_url=norm.normalized_url,
+            domain=norm.canonical_domain,
+            canonical_domain=norm.canonical_domain,
+            hostname=norm.hostname,
+            punycode_domain=norm.punycode_domain,
+            unicode_domain=norm.unicode_domain,
+            protocol=norm.scheme,
+            port=norm.port,
+            ip_based=norm.is_ip_address,
+            url_length=len(norm.normalized_url),
+            domain_length=len(norm.canonical_domain),
             subdomain_count=subdomain_count,
             special_char_count=special_char_count,
             entropy=entropy,
@@ -451,6 +455,8 @@ class URLAnalyzer:
             has_at_symbol=has_at_symbol,
             has_double_slash=has_double_slash,
             has_hex_encoding=has_hex_encoding,
+            has_homograph_attack=norm.has_homograph_attack,
+            stripped_tracking_params=norm.stripped_tracking_params,
             threat_signals=signals,
             base_risk_score=base_risk_score
         )

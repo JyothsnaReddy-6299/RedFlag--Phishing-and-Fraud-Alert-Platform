@@ -10,7 +10,13 @@ export type URLCategory =
 
 export interface URLFeatureAnalysis {
   url: string;
+  original_url?: string;
+  normalized_url?: string;
   domain: string;
+  canonical_domain?: string;
+  hostname?: string;
+  punycode_domain?: string;
+  unicode_domain?: string;
   protocol: string;
   port: number | null;
   ip_based: boolean;
@@ -29,13 +35,20 @@ export interface URLFeatureAnalysis {
   has_at_symbol: boolean;
   has_double_slash: boolean;
   has_hex_encoding: boolean;
+  has_homograph_attack?: boolean;
+  stripped_tracking_params?: string[];
   threat_signals: string[];
   base_risk_score: number;
 }
 
 export interface URLScanResponse {
   url: string;
+  original_url?: string;
+  normalized_url?: string;
   domain: string;
+  canonical_domain?: string;
+  punycode_domain?: string;
+  stripped_tracking_params?: string[];
   risk_score: number;
   risk_level: RiskLevel;
   category: URLCategory;

@@ -206,18 +206,53 @@ export const UrlScanner = forwardRef<HTMLDivElement, UrlScannerProps>((_, ref) =
                 </div>
 
                 {/* Scanned URL Monospace */}
-                <div className="flex items-center gap-2 group">
-                  <p className="font-mono text-sm sm:text-base text-slate-700 break-all select-all font-medium">
-                    {result.url}
-                  </p>
-                  <button
-                    onClick={handleCopyUrl}
-                    title="Copy URL"
-                    className="text-slate-400 hover:text-slate-700 transition-colors p-1"
-                  >
-                    <Copy size={15} />
-                  </button>
-                  {copied && <span className="text-xs text-emerald-600 font-bold">Copied!</span>}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 group">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Target:</span>
+                    <p className="font-mono text-sm sm:text-base text-slate-700 break-all select-all font-medium">
+                      {result.original_url || result.url}
+                    </p>
+                    <button
+                      onClick={handleCopyUrl}
+                      title="Copy URL"
+                      className="text-slate-400 hover:text-slate-700 transition-colors p-1"
+                    >
+                      <Copy size={15} />
+                    </button>
+                    {copied && <span className="text-xs text-emerald-600 font-bold">Copied!</span>}
+                  </div>
+
+                  {/* Canonical Normalized URL if different from original */}
+                  {result.normalized_url && result.original_url && result.normalized_url !== result.original_url && (
+                    <div className="flex items-center gap-2 text-xs font-mono text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded">
+                        Normalized Canonical
+                      </span>
+                      <span className="break-all text-slate-800">{result.normalized_url}</span>
+                    </div>
+                  )}
+
+                  {/* Stripped Tracking Parameters chip */}
+                  {result.stripped_tracking_params && result.stripped_tracking_params.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap text-xs text-slate-500 mt-0.5">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Stripped Trackers:</span>
+                      {result.stripped_tracking_params.map((param, idx) => (
+                        <span key={idx} className="bg-slate-200/80 text-slate-700 px-1.5 py-0.5 rounded text-[11px] font-mono">
+                          {param}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* IDN Homograph Spoofing alert badge if detected */}
+                  {result.url_features?.has_homograph_attack && (
+                    <div className="flex items-center gap-2 text-xs font-bold text-red-700 bg-red-100 border border-red-200 px-2.5 py-1.5 rounded-lg mt-1">
+                      <AlertTriangle size={14} className="text-[#D10000] shrink-0" />
+                      <span>
+                        Punycode IDN Homograph Attack: <span className="font-mono">{result.url_features.punycode_domain}</span>
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 

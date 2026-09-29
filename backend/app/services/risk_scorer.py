@@ -12,7 +12,12 @@ class URLRiskScorer:
         if features.is_official_domain:
             return URLScanResponse(
                 url=features.url,
+                original_url=features.original_url or features.url,
+                normalized_url=features.normalized_url or features.url,
                 domain=features.domain,
+                canonical_domain=features.canonical_domain or features.domain,
+                punycode_domain=features.punycode_domain,
+                stripped_tracking_params=features.stripped_tracking_params,
                 risk_score=0,
                 risk_level=RiskLevel.SAFE_LOW,
                 category=URLCategory.LEGITIMATE,
@@ -43,9 +48,9 @@ class URLRiskScorer:
         # Determine Category
         if is_threat_match:
             category = URLCategory.KNOWN_PHISHING
-        elif features.brand_impersonated:
+        elif features.has_homograph_attack or features.brand_impersonated:
             category = URLCategory.BRAND_IMPERSONATION
-            confidence = max(confidence, 0.90)
+            confidence = max(confidence, 0.95 if features.has_homograph_attack else 0.90)
         elif features.ip_based:
             category = URLCategory.IP_BASED_ATTACK
             confidence = max(confidence, 0.85)
@@ -75,7 +80,10 @@ class URLRiskScorer:
             advice.append("If received via SMS or email, report the message to your local cyber security reporting channel.")
         else:
             level = RiskLevel.CRITICAL
-            if features.brand_impersonated:
+            if features.has_homograph_attack:
+                explanation = f"CRITICAL THREAT: IDN Homograph attack ({features.punycode_domain}). Uses foreign unicode lookalike characters to spoof a legitimate service."
+                advice.append("This domain uses deceptive internationalized characters (homoglyphs) to trick users into believing it is authentic.")
+            elif features.brand_impersonated:
                 explanation = f"CRITICAL THREAT: Deceptive link falsely mimicking {features.brand_impersonated} via lookalike domain, anagram, or typosquatting transposition."
                 advice.append(f"This domain deceptively mimics {features.brand_impersonated}. Do NOT enter account credentials, passwords, or OTPs.")
             else:
@@ -85,7 +93,12 @@ class URLRiskScorer:
 
         return URLScanResponse(
             url=features.url,
+            original_url=features.original_url or features.url,
+            normalized_url=features.normalized_url or features.url,
             domain=features.domain,
+            canonical_domain=features.canonical_domain or features.domain,
+            punycode_domain=features.punycode_domain,
+            stripped_tracking_params=features.stripped_tracking_params,
             risk_score=final_score,
             risk_level=level,
             category=category,

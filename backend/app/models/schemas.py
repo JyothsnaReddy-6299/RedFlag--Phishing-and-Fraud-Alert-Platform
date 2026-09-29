@@ -18,7 +18,13 @@ class URLCategory(str, Enum):
 
 class URLFeatureAnalysis(BaseModel):
     url: str
+    original_url: Optional[str] = None
+    normalized_url: Optional[str] = None
     domain: str
+    canonical_domain: Optional[str] = None
+    hostname: Optional[str] = None
+    punycode_domain: Optional[str] = None
+    unicode_domain: Optional[str] = None
     protocol: str
     port: Optional[int] = None
     ip_based: bool
@@ -37,6 +43,8 @@ class URLFeatureAnalysis(BaseModel):
     has_at_symbol: bool = False
     has_double_slash: bool = False
     has_hex_encoding: bool = False
+    has_homograph_attack: bool = False
+    stripped_tracking_params: List[str] = Field(default_factory=list)
     threat_signals: List[str] = Field(default_factory=list)
     base_risk_score: float = 0.0
 
@@ -47,7 +55,12 @@ class URLScanRequest(BaseModel):
 
 class URLScanResponse(BaseModel):
     url: str
+    original_url: Optional[str] = None
+    normalized_url: Optional[str] = None
     domain: str
+    canonical_domain: Optional[str] = None
+    punycode_domain: Optional[str] = None
+    stripped_tracking_params: List[str] = Field(default_factory=list)
     risk_score: int = Field(..., ge=0, le=100)
     risk_level: RiskLevel
     category: URLCategory
