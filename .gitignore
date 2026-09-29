@@ -5,3 +5,12 @@ __pycache__/
 .env
 *.db
 *.sqlite3
+
+# Node & Frontend
+node_modules/
+dist/
+dist-ssr/
+*.log
+.DS_Store
+.idea/
+.vscode/

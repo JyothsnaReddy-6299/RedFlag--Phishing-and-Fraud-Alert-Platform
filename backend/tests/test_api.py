@@ -49,3 +49,15 @@ def test_known_threats_endpoint():
     data = res.json()
     assert data["count"] > 0
     assert len(data["threats"]) > 0
+
+def test_scan_sms_endpoint():
+    payload = {
+        "text": "Dear customer, your electricity will be disconnected tonight at 9:30 PM. Call officer at 9876543210 immediately.",
+        "sender_id": "+919876543210"
+    }
+    res = client.post("/api/v1/scan/sms", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["risk_score"] >= 60
+    assert "UTILITY" in data["scam_category"]
+    assert len(data["threat_signals"]) > 0

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel, Field, ConfigDict
 
 class RiskLevel(str, Enum):
@@ -56,6 +56,25 @@ class URLScanResponse(BaseModel):
     threat_intel_match: bool
     threat_sources: List[str] = Field(default_factory=list)
     contributing_factors: List[str] = Field(default_factory=list)
+    mitigation_advice: List[str] = Field(default_factory=list)
+    explanation: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+class SMSScanRequest(BaseModel):
+    text: str = Field(..., json_schema_extra={"example": "Dear SBI user, your KYC is expired. Click http://sbi-kyc.xyz/login to avoid account block."})
+    sender_id: Optional[str] = Field(None, json_schema_extra={"example": "+919876543210"})
+
+class SMSScanResponse(BaseModel):
+    text: str
+    risk_score: int = Field(..., ge=0, le=100)
+    risk_level: RiskLevel
+    scam_category: str
+    confidence: float
+    detected_entities: Dict[str, List[str]] = Field(default_factory=dict)
+    urgency_indicators: List[str] = Field(default_factory=list)
+    extracted_urls: List[URLScanResponse] = Field(default_factory=list)
+    threat_signals: List[str] = Field(default_factory=list)
     mitigation_advice: List[str] = Field(default_factory=list)
     explanation: str
 

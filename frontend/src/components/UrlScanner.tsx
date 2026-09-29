@@ -1,0 +1,447 @@
+import { useState, forwardRef } from 'react';
+import {
+  Search,
+  Loader2,
+  AlertTriangle,
+  CheckCircle2,
+  ShieldCheck,
+  ShieldAlert,
+  AlertCircle,
+  Copy,
+  Sparkles,
+  RotateCcw
+} from 'lucide-react';
+import type { URLScanResponse, RiskLevel } from '../types';
+import { scanUrl } from '../services/api';
+
+interface UrlScannerProps {
+  // scanner props
+}
+
+export const UrlScanner = forwardRef<HTMLDivElement, UrlScannerProps>((_, ref) => {
+  const [urlInput, setUrlInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<URLScanResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleScan = async (targetUrl?: string) => {
+    const urlToScan = (targetUrl !== undefined ? targetUrl : urlInput).trim();
+    if (!urlToScan) {
+      setError('Please enter a valid URL to analyze.');
+      return;
+    }
+
+    setUrlInput(urlToScan);
+    setError(null);
+    setLoading(true);
+
+    try {
+      const data = await scanUrl(urlToScan);
+      setResult(data);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to scan URL';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopyUrl = () => {
+    if (result) {
+      navigator.clipboard.writeText(result.url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleReset = () => {
+    setUrlInput('');
+    setResult(null);
+    setError(null);
+  };
+
+  // Helper styles based on RiskLevel
+  const getRiskStyles = (level: RiskLevel) => {
+    switch (level) {
+      case 'SAFE_LOW':
+        return {
+          badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-300',
+          badgeText: 'SAFE',
+          barColor: 'bg-emerald-500',
+          cardBorder: 'border-emerald-200',
+          icon: <ShieldCheck className="w-5 h-5 text-emerald-600 inline mr-1" />,
+          scoreText: 'text-emerald-700',
+        };
+      case 'SUSPICIOUS':
+        return {
+          badgeBg: 'bg-amber-50 text-amber-900 border-amber-300',
+          badgeText: 'SUSPICIOUS',
+          barColor: 'bg-amber-500',
+          cardBorder: 'border-amber-200',
+          icon: <AlertTriangle className="w-5 h-5 text-amber-600 inline mr-1" />,
+          scoreText: 'text-amber-700',
+        };
+      case 'HIGH_RISK':
+        return {
+          badgeBg: 'bg-orange-50 text-orange-900 border-orange-300',
+          badgeText: 'HIGH RISK',
+          barColor: 'bg-orange-500',
+          cardBorder: 'border-orange-200',
+          icon: <AlertCircle className="w-5 h-5 text-orange-600 inline mr-1" />,
+          scoreText: 'text-orange-700',
+        };
+      case 'CRITICAL':
+      default:
+        return {
+          badgeBg: 'bg-red-50 text-red-900 border-red-300',
+          badgeText: 'CRITICAL THREAT',
+          barColor: 'bg-[#D10000]',
+          cardBorder: 'border-red-300',
+          icon: <ShieldAlert className="w-5 h-5 text-[#D10000] inline mr-1" />,
+          scoreText: 'text-[#D10000]',
+        };
+    }
+  };
+
+  return (
+    <div id="scanner-section" ref={ref} className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6">
+      {/* Scanner Card Container */}
+      <div className="bg-white rounded-3xl shadow-xl border border-[#BBD5DA] overflow-hidden p-6 sm:p-10">
+        
+        {/* Section Heading */}
+        <div className="text-center max-w-2xl mx-auto mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#DFF1F1] text-teal-800 text-xs font-bold tracking-wide uppercase mb-3">
+            <Sparkles size={14} />
+            <span>Real-Time URL Threat Inspector</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            Inspect Suspicious Links
+          </h2>
+          <p className="text-slate-600 text-sm sm:text-base mt-2">
+            Paste any link from an SMS, WhatsApp message, or email to uncover spoofed banking domains, Shannon entropy anomalies, and phishing triggers.
+          </p>
+        </div>
+
+        {/* Input Bar */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleScan();
+          }}
+          className="relative flex flex-col sm:flex-row items-stretch gap-3 mb-6"
+        >
+          <div className="relative flex-grow">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+              <Search size={20} />
+            </div>
+            <input
+              type="text"
+              id="url-scan-input"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="Paste link here (e.g., https://onlinesbi.sbi.bank.in/ or http://sbi-kyc.xyz)"
+              className="w-full pl-11 pr-24 py-4 rounded-2xl bg-[#F5F5F5] border-2 border-[#BBD5DA] focus:border-[#D10000] focus:bg-white focus:outline-none text-slate-900 font-mono text-sm sm:text-base transition-all"
+            />
+            {urlInput && (
+              <button
+                type="button"
+                onClick={handleReset}
+                className="absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-slate-400 hover:text-slate-700 px-2 cursor-pointer"
+              >
+                <RotateCcw size={16} className="mr-1" />
+                Clear
+              </button>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-redflag-glow px-8 py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap shadow-md"
+          >
+            {loading ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                <span>Inspecting...</span>
+              </>
+            ) : (
+              <>
+                <ShieldAlert size={20} />
+                <span>Scan Link</span>
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Error Alert */}
+        {error && (
+          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-3 mb-6 animate-fadeIn">
+            <AlertCircle size={20} className="text-[#D10000] shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* RESULT CARD - MATCHING USER REFERENCE IMAGE 2 EXACTLY */}
+        {result && (
+          <div className="mt-8 pt-8 border-t border-[#BBD5DA] animate-fadeIn">
+            
+            {/* Top Row: Badges, Category, URL, and Threat Score */}
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  {/* Risk Badge (e.g. SUSPICIOUS / SAFE) */}
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider border ${
+                      getRiskStyles(result.risk_level).badgeBg
+                    }`}
+                  >
+                    {result.risk_level === 'SAFE_LOW' ? 'SAFE' : result.risk_level}
+                  </span>
+
+                  {/* Category Name */}
+                  <span className="text-sm font-black uppercase tracking-wider text-slate-800">
+                    {result.category.replace(/_/g, ' ')}
+                  </span>
+                </div>
+
+                {/* Scanned URL Monospace */}
+                <div className="flex items-center gap-2 group">
+                  <p className="font-mono text-sm sm:text-base text-slate-700 break-all select-all font-medium">
+                    {result.url}
+                  </p>
+                  <button
+                    onClick={handleCopyUrl}
+                    title="Copy URL"
+                    className="text-slate-400 hover:text-slate-700 transition-colors p-1"
+                  >
+                    <Copy size={15} />
+                  </button>
+                  {copied && <span className="text-xs text-emerald-600 font-bold">Copied!</span>}
+                </div>
+              </div>
+
+              {/* Threat Score Top Right */}
+              <div className="flex flex-col items-start md:items-end shrink-0">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                  THREAT SCORE
+                </span>
+                <div className="flex items-baseline gap-1">
+                  <span
+                    className={`text-4xl sm:text-5xl font-black ${
+                      getRiskStyles(result.risk_level).scoreText
+                    }`}
+                  >
+                    {result.risk_score}
+                  </span>
+                  <span className="text-base font-bold text-slate-400">/ 100</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Score Progress Bar */}
+            <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden mb-6">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ease-out ${
+                  getRiskStyles(result.risk_level).barColor
+                }`}
+                style={{ width: `${Math.max(result.risk_score, 4)}%` }}
+              />
+            </div>
+
+            {/* REDFLAG DETECTION VERDICT Box */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#DFF1F1]/50 border border-[#BBD5DA] mb-6">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 text-slate-800 shrink-0">
+                  {getRiskStyles(result.risk_level).icon}
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 mb-1">
+                    REDFLAG DETECTION VERDICT
+                  </h4>
+                  <p className="text-sm text-slate-700 leading-relaxed font-normal">
+                    {result.explanation}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* STRUCTURAL HEURISTIC BREAKDOWN (6 CARDS) */}
+            <div className="mb-6">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 mb-3">
+                STRUCTURAL HEURISTIC BREAKDOWN:
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {/* 1. HOST DOMAIN */}
+                <div className="p-3.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                    HOST DOMAIN
+                  </span>
+                  <p className="font-mono text-sm font-bold text-slate-900 break-all">
+                    {result.url_features.domain}
+                  </p>
+                </div>
+
+                {/* 2. SHANNON ENTROPY */}
+                <div className="p-3.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                      SHANNON ENTROPY
+                    </span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                        result.url_features.entropy > 4.0
+                          ? 'bg-red-100 text-red-700'
+                          : result.url_features.entropy > 3.3
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-emerald-100 text-emerald-800'
+                      }`}
+                    >
+                      {result.url_features.entropy > 4.0 ? 'High' : 'Normal'}
+                    </span>
+                  </div>
+                  <p className="font-mono text-sm font-bold text-slate-900">
+                    {result.url_features.entropy.toFixed(3)}
+                  </p>
+                </div>
+
+                {/* 3. BRAND MIMICKED */}
+                <div className="p-3.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                    BRAND MIMICKED
+                  </span>
+                  {result.url_features.is_official_domain ? (
+                    <p className="text-sm font-bold text-emerald-700 flex items-center gap-1">
+                      <CheckCircle2 size={15} />
+                      <span>Official {result.url_features.official_brand_name || 'Portal'}</span>
+                    </p>
+                  ) : result.url_features.brand_impersonated ? (
+                    <p className="text-sm font-bold text-[#D10000] flex items-center gap-1">
+                      <AlertTriangle size={15} />
+                      <span>Mimics {result.url_features.brand_impersonated}</span>
+                    </p>
+                  ) : (
+                    <p className="text-sm font-medium text-slate-600">None detected</p>
+                  )}
+                </div>
+
+                {/* 4. TOP-LEVEL DOMAIN */}
+                <div className="p-3.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                      TOP-LEVEL DOMAIN
+                    </span>
+                    {result.url_features.suspicious_tld && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-red-100 text-red-700">
+                        High-Abuse
+                      </span>
+                    )}
+                  </div>
+                  <p className="font-mono text-sm font-bold text-slate-900">
+                    .{result.url_features.detected_tld || 'unknown'}
+                  </p>
+                </div>
+
+                {/* 5. SUBDOMAINS & LENGTH */}
+                <div className="p-3.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                    SUBDOMAINS & LENGTH
+                  </span>
+                  <p className="font-mono text-sm font-bold text-slate-900">
+                    {result.url_features.subdomain_count} (Len: {result.url_features.url_length})
+                  </p>
+                </div>
+
+                {/* 6. PROTOCOL & PORT */}
+                <div className="p-3.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                    PROTOCOL & PORT
+                  </span>
+                  <p className="font-mono text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                    <span
+                      className={
+                        result.url_features.protocol.toUpperCase() === 'HTTPS'
+                          ? 'text-emerald-700'
+                          : 'text-amber-700'
+                      }
+                    >
+                      {result.url_features.protocol.toUpperCase()}
+                    </span>
+                    {result.url_features.port && (
+                      <span className="text-xs text-red-600 bg-red-50 px-1 rounded">
+                        Port {result.url_features.port}
+                      </span>
+                    )}
+                    {result.url_features.ip_based && (
+                      <span className="text-xs text-red-700 font-bold bg-red-100 px-1.5 rounded">
+                        IP Host
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* DETECTED THREAT SIGNALS */}
+            {result.url_features.threat_signals && result.url_features.threat_signals.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 mb-2.5">
+                  DETECTED THREAT SIGNALS:
+                </h4>
+                <div className="p-4 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5] space-y-2">
+                  {result.url_features.threat_signals.map((signal, idx) => (
+                    <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-800 font-medium">
+                      <AlertTriangle size={15} className="text-[#D10000] shrink-0 mt-0.5" />
+                      <span>{signal}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* RECOMMENDED SAFETY ACTIONS */}
+            {result.mitigation_advice && result.mitigation_advice.length > 0 && (
+              <div>
+                <div
+                  className={`p-4 sm:p-5 rounded-2xl border ${
+                    result.risk_level === 'SAFE_LOW'
+                      ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
+                      : 'bg-red-50/70 border-red-200 text-red-950'
+                  }`}
+                >
+                  <h4 className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5 mb-2.5">
+                    {result.risk_level === 'SAFE_LOW' ? (
+                      <>
+                        <ShieldCheck size={16} className="text-emerald-700" />
+                        <span>VERIFIED CITIZEN ADVICE:</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle size={16} className="text-[#D10000]" />
+                        <span className="text-[#D10000]">RECOMMENDED SAFETY ACTIONS:</span>
+                      </>
+                    )}
+                  </h4>
+
+                  <ul className="space-y-1.5 text-xs sm:text-sm pl-2">
+                    {result.mitigation_advice.map((advice, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-slate-400 font-bold">•</span>
+                        <span>{advice}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+});
+
+UrlScanner.displayName = 'UrlScanner';

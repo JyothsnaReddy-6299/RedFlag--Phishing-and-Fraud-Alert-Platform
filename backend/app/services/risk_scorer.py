@@ -75,7 +75,11 @@ class URLRiskScorer:
             advice.append("If received via SMS or email, report the message to your local cyber security reporting channel.")
         else:
             level = RiskLevel.CRITICAL
-            explanation = f"CRITICAL THREAT: Verified malicious URL ({category.value}) designed to steal credentials or financial assets."
+            if features.brand_impersonated:
+                explanation = f"CRITICAL THREAT: Deceptive link falsely mimicking {features.brand_impersonated} via lookalike domain, anagram, or typosquatting transposition."
+                advice.append(f"This domain deceptively mimics {features.brand_impersonated}. Do NOT enter account credentials, passwords, or OTPs.")
+            else:
+                explanation = f"CRITICAL THREAT: Verified malicious URL ({category.value}) designed to steal credentials or financial assets."
             advice.append("IMMEDIATE WARNING: Avoid visiting or interacting with this host.")
             advice.append("If you have entered passwords or banking PINs, freeze your account and reset your passwords immediately.")
 

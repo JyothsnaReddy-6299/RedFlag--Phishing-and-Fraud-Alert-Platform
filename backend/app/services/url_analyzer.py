@@ -85,6 +85,48 @@ TARGET_BRANDS: Dict[str, List[str]] = {
     ]
 }
 
+# Strict registry of authorized Indian banks on the restricted .bank.in TLD
+AUTHORIZED_BANK_IN_ENTITIES: Dict[str, str] = {
+    "sbi": "State Bank of India (SBI)",
+    "hdfc": "HDFC Bank",
+    "hdfcbank": "HDFC Bank",
+    "icici": "ICICI Bank",
+    "axis": "Axis Bank",
+    "pnb": "Punjab National Bank",
+    "canara": "Canara Bank",
+    "bob": "Bank of Baroda",
+    "kotak": "Kotak Mahindra Bank",
+    "unionbank": "Union Bank of India",
+    "unionbankofindia": "Union Bank of India",
+    "boi": "Bank of India",
+    "indianbank": "Indian Bank",
+    "centralbank": "Central Bank of India",
+    "idbi": "IDBI Bank",
+    "yesbank": "Yes Bank",
+    "indusind": "IndusInd Bank",
+    "federalbank": "Federal Bank",
+    "rblbank": "RBL Bank",
+    "ippb": "India Post Payments Bank (IPPB)",
+}
+
+# Brand aliases and service names targeted by typosquatters
+BRAND_ALIASES: Dict[str, List[str]] = {
+    "sbi": ["onlinesbi", "statebankofindia", "sbicard", "sbibank", "sbionline"],
+    "hdfc": ["hdfcbank", "hdfcsec", "hdfcnetbanking"],
+    "icici": ["icicibank", "icicidirect", "icicinetbanking"],
+    "axis": ["axisbank", "axisnetbanking"],
+    "pnb": ["pnbindia", "pnbnetbanking"],
+    "kotak": ["kotakbank", "kotakcherry", "kotaknetbanking"],
+    "paypal": ["paypalme"],
+    "paytm": ["paytmbank", "paytmmall"],
+    "google": ["googlepay", "gpay"],
+}
+
+BANKING_AFFIXES = [
+    "online", "netbanking", "ebank", "bank", "banking", "portal",
+    "corp", "corporate", "retail", "secure", "auth", "card", "pay"
+]
+
 # Seed list of known malicious threat intelligence feeds (URLhaus / PhishTank)
 KNOWN_MALICIOUS_DOMAINS: Dict[str, Dict[str, str]] = {
     "sbi-kyc-update.xyz": {"category": "PHISHING", "source": "ThreatFeed_URLhaus"},
@@ -109,21 +151,36 @@ def calculate_shannon_entropy(text: str) -> float:
         entropy -= p * math.log2(p)
     return round(entropy, 3)
 
-def levenshtein_distance(s1: str, s2: str) -> int:
-    if len(s1) < len(s2):
-        return levenshtein_distance(s2, s1)
-    if len(s2) == 0:
-        return len(s1)
-    previous_row = range(len(s2) + 1)
-    for i, c1 in enumerate(s1):
-        current_row = [i + 1]
-        for j, c2 in enumerate(s2):
-            insertions = previous_row[j + 1] + 1
-            deletions = current_row[j] + 1
-            substitutions = previous_row[j] + (c1 != c2)
-            current_row.append(min(insertions, deletions, substitutions))
-        previous_row = current_row
-    return previous_row[-1]
+def damerau_levenshtein_distance(s1: str, s2: str) -> int:
+    """
+    Computes Damerau-Levenshtein distance, handling insertions, deletions,
+    substitutions, and transpositions of adjacent characters (e.g. 'sbi' <-> 'sib').
+    """
+    if s1 == s2:
+        return 0
+    len1, len2 = len(s1), len(s2)
+    if abs(len1 - len2) > 3:
+        return abs(len1 - len2)
+
+    d = {}
+    for i in range(-1, len1 + 1):
+        d[(i, -1)] = i + 1
+    for j in range(-1, len2 + 1):
+        d[(-1, j)] = j + 1
+
+    for i in range(len1):
+        for j in range(len2):
+            cost = 0 if s1[i] == s2[j] else 1
+            d[(i, j)] = min(
+                d[(i - 1, j)] + 1,       # deletion
+                d[(i, j - 1)] + 1,       # insertion
+                d[(i - 1, j - 1)] + cost # substitution
+            )
+            # Transposition check
+            if i > 0 and j > 0 and s1[i] == s2[j - 1] and s1[i - 1] == s2[j]:
+                d[(i, j)] = min(d[(i, j)], d[(i - 2, j - 2)] + 1)
+
+    return d[(len1 - 1, len2 - 1)]
 
 class URLAnalyzer:
     def __init__(self):
@@ -134,27 +191,122 @@ class URLAnalyzer:
 
     def check_official_domain(self, domain: str) -> Tuple[bool, Optional[str]]:
         """
-        Checks if a domain belongs to a verified official brand or protected banking/gov namespace.
-        In India, '.bank.in' is exclusively allocated by IDRBT/RBI to licensed commercial banks.
-        '.gov.in' and '.nic.in' are exclusively allocated to Indian government organizations.
+        Checks if a domain belongs to a verified official brand or authorized banking/gov registry.
+        Does NOT grant wildcard trust to arbitrary .bank.in domains unless they are explicitly authorized.
         """
         domain_clean = domain.lower()
 
-        # Check explicit brand whitelist
+        # 1. Check explicit brand whitelist first
         for brand, official_domains in TARGET_BRANDS.items():
             for legit in official_domains:
                 if domain_clean == legit or domain_clean.endswith("." + legit):
                     return True, brand.upper()
 
-        # Check protected official namespaces
+        # 2. Check restricted .bank.in registry against verified authorized entities
         if domain_clean.endswith(".bank.in"):
-            bank_name = domain_clean.split(".bank.in")[0].split(".")[-1]
-            return True, f"{bank_name.upper()} (Authorized .bank.in)"
+            before_tld = domain_clean[:-8]  # strip '.bank.in'
+            parts = before_tld.split(".")
+            root_bank = parts[-1]  # root registered organization under .bank.in
 
+            if root_bank in AUTHORIZED_BANK_IN_ENTITIES:
+                # If root entity is authorized (e.g. sbi), ensure subdomains aren't deceptive spoofing of another brand
+                expected_brand = "sbi" if root_bank == "sbi" else root_bank
+                has_subdomain_spoof = False
+                for part in parts[:-1]:
+                    # Check if subdomain typosquats a different brand
+                    for other_brand, other_aliases in BRAND_ALIASES.items():
+                        if other_brand == expected_brand:
+                            continue
+                        for target in [other_brand] + other_aliases:
+                            if damerau_levenshtein_distance(part, target) <= 1:
+                                has_subdomain_spoof = True
+                                break
+                if not has_subdomain_spoof:
+                    return True, AUTHORIZED_BANK_IN_ENTITIES[root_bank]
+
+        # 3. Check government domains (.gov.in / .nic.in)
         if domain_clean.endswith(".gov.in") or domain_clean.endswith(".nic.in"):
             return True, "Government of India (.gov.in)"
 
         return False, None
+
+    def _check_brand_impersonation(self, domain: str, full_url: str) -> Tuple[Optional[str], float, List[str]]:
+        """
+        Advanced typosquatting and brand lookalike detection:
+        Detects transpositions (e.g. 'sib' vs 'sbi', 'hfdc' vs 'hdfc'), compound typosquats
+        ('onlinesib' vs 'onlinesbi'), character anagrams, and unauthorized brand keywords.
+        """
+        url_lower = full_url.lower()
+        domain_clean = domain.lower()
+        signals: List[str] = []
+
+        for brand, official_domains in TARGET_BRANDS.items():
+            # Skip if domain is verified official for this brand
+            if any(domain_clean == legit or domain_clean.endswith("." + legit) for legit in official_domains):
+                continue
+
+            aliases = BRAND_ALIASES.get(brand, [])
+            all_targets = [brand] + aliases
+
+            # 1. Exact brand keyword in domain label (e.g. 'sbi-update.xyz', 'login-sbi.com')
+            for part in domain_clean.split("."):
+                if part in ["bank", "in", "com", "co", "org", "net"]:
+                    continue
+
+                if brand in part and part != brand:
+                    signals.append(f"Brand impersonation detected: deceptive domain label '{part}' contains unauthorized brand keyword '{brand.upper()}'")
+                    return (brand.upper(), 0.95, signals)
+
+            # 2. Typosquatting / Lookalike / Anagram check across all domain labels
+            parts = domain_clean.split(".")
+            for part in parts:
+                if part in ["bank", "in", "com", "co", "org", "net"]:
+                    continue
+
+                # A. Direct Damerau-Levenshtein distance == 1 against brand or aliases (e.g. 'sib' vs 'sbi', 'onlinesib' vs 'onlinesbi')
+                for target in all_targets:
+                    if part != target and damerau_levenshtein_distance(part, target) == 1:
+                        signals.append(
+                            f"Brand typosquatting detected: '{part}' is a deceptive lookalike/transposition of '{target}' ({brand.upper()})"
+                        )
+                        return (brand.upper(), 0.95, signals)
+
+                # B. Anagram permutation for short acronyms (e.g. 'sib' vs 'sbi', 'pbn' vs 'pnb')
+                for target in [brand] + [a for a in aliases if len(a) <= 4]:
+                    if len(part) == len(target) and len(target) in (3, 4) and part != target and sorted(part) == sorted(target):
+                        signals.append(
+                            f"Deceptive anagram typosquatting: '{part}' is a character-swapped permutation of '{target.upper()}'"
+                        )
+                        return (brand.upper(), 0.95, signals)
+
+                # C. Affix-stripped typosquatting (e.g. 'onlinesib' -> prefix 'online' + root 'sib' mimicking 'sbi')
+                for affix in BANKING_AFFIXES:
+                    root = None
+                    if part.startswith(affix) and len(part) > len(affix):
+                        root = part[len(affix):]
+                    elif part.endswith(affix) and len(part) > len(affix):
+                        root = part[:-len(affix)]
+
+                    if root and len(root) >= 2:
+                        for target in all_targets:
+                            if root != target and damerau_levenshtein_distance(root, target) == 1:
+                                signals.append(
+                                    f"Deceptive compound typosquatting: '{part}' (root '{root}') mimics '{target}' ({brand.upper()})"
+                                )
+                                return (brand.upper(), 0.95, signals)
+                            if len(root) == len(target) and len(target) in (3, 4) and root != target and sorted(root) == sorted(target):
+                                signals.append(
+                                    f"Deceptive compound typosquatting: '{part}' (root '{root}') is an anagram permutation of '{target.upper()}'"
+                                )
+                                return (brand.upper(), 0.95, signals)
+
+            # 3. Brand in path or query with sensitive keywords on non-official domain
+            if brand in url_lower:
+                if any(kw in url_lower for kw in ["login", "kyc", "update", "verify", "pay", "auth"]):
+                    signals.append(f"Unauthorized use of '{brand.upper()}' in URL path with sensitive action keywords")
+                    return (brand.upper(), 0.85, signals)
+
+        return (None, 0.0, [])
 
     def analyze(self, raw_url: str) -> URLFeatureAnalysis:
         raw_url = raw_url.strip()
@@ -174,7 +326,6 @@ class URLAnalyzer:
             domain = domain[4:]
 
         path = parsed.path.lower()
-        query = parsed.query.lower()
 
         # Check official domain status FIRST
         is_official, official_brand = self.check_official_domain(domain)
@@ -206,12 +357,13 @@ class URLAnalyzer:
         # 7. Brand Impersonation check (Only if domain is NOT verified official)
         impersonated_brand = None
         similarity_score = 0.0
+        impersonation_signals: List[str] = []
 
         if not is_official:
-            impersonated_brand, similarity_score = self._check_brand_impersonation(domain, full_url)
+            impersonated_brand, similarity_score, impersonation_signals = self._check_brand_impersonation(domain, full_url)
 
         # 8. Threat Signal Aggregation
-        signals = []
+        signals: List[str] = []
         score = 0.0
 
         # If verified official, grant trust immunity from structural false positives
@@ -219,6 +371,11 @@ class URLAnalyzer:
             signals.append(f"Verified Official Portal: Belongs to {official_brand} authorized domain registry")
             base_risk_score = 0.0
         else:
+            # Check unauthorized .bank.in usage
+            if domain.endswith(".bank.in"):
+                signals.append("Unauthorized or unregistered entity claiming '.bank.in' namespace")
+                score += 40.0
+
             if ip_based:
                 signals.append("URL uses raw IP address instead of domain hostname (bypasses DNS reputation)")
                 score += 35.0
@@ -255,9 +412,10 @@ class URLAnalyzer:
                 signals.append(f"URL uses non-standard network port (:{port})")
                 score += 20.0
 
+            # Add brand impersonation and typosquatting signals
             if impersonated_brand:
-                signals.append(f"Brand impersonation detected: deceptive lookalike of '{impersonated_brand}' without authorization")
-                score += 40.0
+                signals.extend(impersonation_signals)
+                score += 50.0
 
             if len(found_keywords) >= 2:
                 signals.append(f"Multiple social-engineering keywords in URL: {', '.join(found_keywords[:4])}")
@@ -302,32 +460,5 @@ class URLAnalyzer:
         if domain_clean in KNOWN_MALICIOUS_DOMAINS:
             return KNOWN_MALICIOUS_DOMAINS[domain_clean]
         return None
-
-    def _check_brand_impersonation(self, domain: str, full_url: str) -> Tuple[Optional[str], float]:
-        url_lower = full_url.lower()
-
-        for brand, official_domains in TARGET_BRANDS.items():
-            # If domain is already one of the official domains, it's NOT an impersonator
-            if any(domain == legit or domain.endswith("." + legit) for legit in official_domains):
-                continue
-
-            # Substring match on foreign domain (e.g. sbi in sbi-update.xyz)
-            if brand in domain:
-                return (brand.upper(), 0.95)
-
-            # Levenshtein distance on domain labels (e.g. 'sbii' or 'paytmm')
-            parts = domain.split(".")
-            for part in parts:
-                if len(part) >= 3:
-                    dist = levenshtein_distance(part, brand)
-                    if dist == 1 and len(brand) >= 3:
-                        return (brand.upper(), 0.90)
-
-            # Brand in path/subdomain with sensitive keywords on unauthorized domain
-            if brand in url_lower:
-                if any(kw in url_lower for kw in ["login", "kyc", "update", "verify", "pay", "auth"]):
-                    return (brand.upper(), 0.85)
-
-        return (None, 0.0)
 
 url_analyzer = URLAnalyzer()

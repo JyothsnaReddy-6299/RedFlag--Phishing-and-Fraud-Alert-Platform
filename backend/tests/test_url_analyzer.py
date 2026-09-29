@@ -42,3 +42,10 @@ def test_threat_feed_check():
     match = url_analyzer.check_threat_feeds("sbi-kyc-update.xyz")
     assert match is not None
     assert match["category"] == "PHISHING"
+
+def test_typosquatting_sib_bank_in():
+    res = url_analyzer.analyze("https://onlinesib.sib.bank.in/")
+    assert res.is_official_domain is False
+    assert res.brand_impersonated == "SBI"
+    assert res.base_risk_score >= 80
+    assert any("typosquatting" in s.lower() for s in res.threat_signals)

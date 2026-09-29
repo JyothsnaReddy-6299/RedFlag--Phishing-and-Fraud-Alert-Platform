@@ -35,10 +35,13 @@ def health_check():
         "focus": "Malicious Links & Phishing Detection Engine"
     }
 
-# Mount Static frontend UI from frontend directory
-frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend"))
-if os.path.exists(frontend_dir):
-    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")
+# Mount Static frontend UI from frontend/dist (production React build) or frontend
+frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend/dist"))
+frontend_src = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend"))
+target_static = frontend_dist if os.path.exists(frontend_dist) else frontend_src
+
+if os.path.exists(target_static):
+    app.mount("/", StaticFiles(directory=target_static, html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn
