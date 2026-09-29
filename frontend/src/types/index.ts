@@ -8,6 +8,18 @@ export type URLCategory =
   | 'IP_BASED_ATTACK'
   | 'HIGH_ABUSE_TLD';
 
+export interface URLComponents {
+  scheme: string;
+  subdomain: string;
+  registered_domain: string;
+  tld: string;
+  TLD?: string;
+  port: number | null;
+  path: string;
+  query: string;
+  fragment: string;
+}
+
 export interface URLFeatureAnalysis {
   url: string;
   original_url?: string;
@@ -15,6 +27,14 @@ export interface URLFeatureAnalysis {
   domain: string;
   canonical_domain?: string;
   hostname?: string;
+  subdomain?: string;
+  registered_domain?: string;
+  tld?: string;
+  scheme?: string;
+  path?: string;
+  query?: string;
+  fragment?: string;
+  components?: URLComponents;
   punycode_domain?: string;
   unicode_domain?: string;
   protocol: string;
@@ -47,6 +67,15 @@ export interface URLScanResponse {
   normalized_url?: string;
   domain: string;
   canonical_domain?: string;
+  subdomain?: string;
+  registered_domain?: string;
+  tld?: string;
+  scheme?: string;
+  port?: number | null;
+  path?: string;
+  query?: string;
+  fragment?: string;
+  components?: URLComponents;
   punycode_domain?: string;
   stripped_tracking_params?: string[];
   risk_score: number;

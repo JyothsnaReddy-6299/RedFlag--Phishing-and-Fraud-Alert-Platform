@@ -142,3 +142,90 @@ def test_store_both_original_and_normalized_url():
     assert response.original_url == raw_input
     assert response.normalized_url == "https://onlinesbi.sbi.bank.in/sbi/login/test?action=verify#FragMent"
     assert "utm_source" in response.stripped_tracking_params
+
+
+def test_step2_break_url_into_8_components():
+    url = "https://retail.onlinesbi.sbi.bank.in:8443/login/verify?action=auth&step=2#section"
+    res = url_normalizer.normalize(url)
+
+    # 1. scheme
+    assert res.scheme == "https"
+    assert res.components.scheme == "https"
+
+    # 2. subdomain
+    assert res.subdomain == "retail.onlinesbi"
+    assert res.components.subdomain == "retail.onlinesbi"
+
+    # 3. registered_domain
+    assert res.registered_domain == "sbi.bank.in"
+    assert res.components.registered_domain == "sbi.bank.in"
+
+    # 4. TLD (both lowercase and uppercase property)
+    assert res.tld == "bank.in"
+    assert res.TLD == "bank.in"
+    assert res.components.tld == "bank.in"
+    assert res.components.TLD == "bank.in"
+
+    # 5. port
+    assert res.port == 8443
+    assert res.components.port == 8443
+
+    # 6. path
+    assert res.path == "/login/verify"
+    assert res.components.path == "/login/verify"
+
+    # 7. query
+    assert res.query == "action=auth&step=2"
+    assert res.components.query == "action=auth&step=2"
+
+    # 8. fragment
+    assert res.fragment == "section"
+    assert res.components.fragment == "section"
+
+
+def test_decompose_method_returns_components():
+    url = "http://login.secure.hsbc.co.uk:8080/auth?token=xyz#top"
+    components = url_normalizer.decompose(url)
+
+    assert components.scheme == "http"
+    assert components.subdomain == "login.secure"
+    assert components.registered_domain == "hsbc.co.uk"
+    assert components.tld == "co.uk"
+    assert components.TLD == "co.uk"
+    assert components.port == 8080
+    assert components.path == "/auth"
+    assert components.query == "token=xyz"
+    assert components.fragment == "top"
+
+    # Verify dictionary serialization contains all 8 keys
+    c_dict = components.to_dict()
+    for key in ["scheme", "subdomain", "registered_domain", "tld", "TLD", "port", "path", "query", "fragment"]:
+        assert key in c_dict
+
+
+def test_decomposition_with_ip_address():
+    url = "http://192.168.1.1:8080/admin?id=1#top"
+    components = url_normalizer.decompose(url)
+
+    assert components.scheme == "http"
+    assert components.subdomain == ""
+    assert components.registered_domain == "192.168.1.1"
+    assert components.tld == ""
+    assert components.port == 8080
+    assert components.path == "/admin"
+    assert components.query == "id=1"
+    assert components.fragment == "top"
+
+
+def test_subdomain_brand_spoofing_detection():
+    # Attacker places 'sbi' in subdomain on untrusted registered domain 'evilphish.com'
+    url = "http://sbi.bank.login.evilphish.com/verify"
+    features = url_analyzer.analyze(url)
+
+    assert features.subdomain == "sbi.bank.login"
+    assert features.registered_domain == "evilphish.com"
+    assert features.tld == "com"
+    assert any("Subdomain brand impersonation" in sig for sig in features.threat_signals)
+    assert features.brand_impersonated == "SBI"
+    assert features.base_risk_score >= 45.0
+

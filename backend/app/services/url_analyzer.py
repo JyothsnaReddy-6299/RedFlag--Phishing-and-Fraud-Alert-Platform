@@ -1,8 +1,8 @@
 import math
 import re
 from typing import List, Tuple, Optional, Dict
-from app.models.schemas import URLFeatureAnalysis
-from app.services.url_normalizer import url_normalizer
+from app.models.schemas import URLFeatureAnalysis, URLComponents
+from app.services.url_normalizer import url_normalizer, URLComponents as URLComponentsData
 
 SUSPICIOUS_TLDS = {
     "xyz", "top", "club", "work", "click", "buzz", "rest", "cam", "live",
@@ -309,16 +309,24 @@ class URLAnalyzer:
         return (None, 0.0, [])
 
     def analyze(self, raw_url: str) -> URLFeatureAnalysis:
-        # 0. RFC-compliant URL Normalization Layer
+        # 0. RFC-compliant URL Normalization & 8-Part Decomposition Layer
         norm = url_normalizer.normalize(raw_url)
         full_url = norm.normalized_url
         domain = norm.canonical_domain
+        subdomain = norm.subdomain
+        registered_domain = norm.registered_domain
+        tld = norm.tld
         protocol = norm.scheme
+        scheme = norm.scheme
         port = norm.port
         path = norm.path.lower()
+        query = norm.query
+        fragment = norm.fragment
 
         # Check official domain status FIRST
         is_official, official_brand = self.check_official_domain(domain)
+        if not is_official and registered_domain != domain:
+            is_official, official_brand = self.check_official_domain(registered_domain)
         if not is_official and norm.hostname != domain:
             is_official, official_brand = self.check_official_domain(norm.hostname)
 
@@ -326,12 +334,10 @@ class URLAnalyzer:
         ip_based = norm.is_ip_address or bool(self.ip_pattern.match(full_url))
 
         # 2. Subdomains
-        parts = domain.split(".")
-        subdomain_count = max(0, len(parts) - 2) if len(parts) >= 2 else 0
+        subdomain_count = len(subdomain.split(".")) if subdomain else 0
 
         # 3. TLD
-        tld = parts[-1] if len(parts) > 1 else ""
-        suspicious_tld = tld in SUSPICIOUS_TLDS
+        suspicious_tld = tld in SUSPICIOUS_TLDS or ("." in tld and tld.split(".")[-1] in SUSPICIOUS_TLDS)
 
         # 4. Special Characters & Obfuscation
         special_chars = set("@-_~%&=?")
@@ -368,6 +374,18 @@ class URLAnalyzer:
             if norm.has_homograph_attack:
                 signals.append(f"IDN Homograph attack detected (Punycode spoofing: '{norm.punycode_domain}' disguising as '{norm.unicode_domain}')")
                 score += 55.0
+
+            # Subdomain brand spoofing check
+            if subdomain and not is_official:
+                sub_lower = subdomain.lower()
+                for brand, aliases in BRAND_ALIASES.items():
+                    if brand in sub_lower or any(alias in sub_lower for alias in aliases):
+                        signals.append(f"Subdomain brand impersonation: Deceptive brand '{brand.upper()}' prepended on untrusted domain '{registered_domain}'")
+                        score += 45.0
+                        if not impersonated_brand:
+                            impersonated_brand = brand.upper()
+                            similarity_score = max(similarity_score, 0.95)
+                        break
 
             # Check unauthorized .bank.in usage
             if domain.endswith(".bank.in"):
@@ -428,6 +446,17 @@ class URLAnalyzer:
 
             base_risk_score = min(100.0, max(0.0, round(score, 1)))
 
+        components_model = URLComponents(
+            scheme=scheme,
+            subdomain=subdomain,
+            registered_domain=registered_domain,
+            tld=tld,
+            port=port,
+            path=norm.path,
+            query=query,
+            fragment=fragment,
+        )
+
         return URLFeatureAnalysis(
             url=norm.normalized_url,
             original_url=norm.original_url,
@@ -435,10 +464,18 @@ class URLAnalyzer:
             domain=norm.canonical_domain,
             canonical_domain=norm.canonical_domain,
             hostname=norm.hostname,
+            subdomain=subdomain,
+            registered_domain=registered_domain,
+            tld=tld,
             punycode_domain=norm.punycode_domain,
             unicode_domain=norm.unicode_domain,
             protocol=norm.scheme,
+            scheme=scheme,
             port=norm.port,
+            path=norm.path,
+            query=query,
+            fragment=fragment,
+            components=components_model,
             ip_based=norm.is_ip_address,
             url_length=len(norm.normalized_url),
             domain_length=len(norm.canonical_domain),

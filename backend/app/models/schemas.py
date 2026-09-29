@@ -16,6 +16,18 @@ class URLCategory(str, Enum):
     IP_BASED_ATTACK = "IP_BASED_ATTACK"
     HIGH_ABUSE_TLD = "HIGH_ABUSE_TLD"
 
+class URLComponents(BaseModel):
+    scheme: str
+    subdomain: str
+    registered_domain: str
+    tld: str
+    port: Optional[int] = None
+    path: str
+    query: str
+    fragment: str
+
+    model_config = ConfigDict(from_attributes=True)
+
 class URLFeatureAnalysis(BaseModel):
     url: str
     original_url: Optional[str] = None
@@ -23,10 +35,18 @@ class URLFeatureAnalysis(BaseModel):
     domain: str
     canonical_domain: Optional[str] = None
     hostname: Optional[str] = None
+    subdomain: Optional[str] = None
+    registered_domain: Optional[str] = None
+    tld: Optional[str] = None
     punycode_domain: Optional[str] = None
     unicode_domain: Optional[str] = None
     protocol: str
+    scheme: Optional[str] = None
     port: Optional[int] = None
+    path: Optional[str] = None
+    query: Optional[str] = None
+    fragment: Optional[str] = None
+    components: Optional[URLComponents] = None
     ip_based: bool
     url_length: int
     domain_length: int
@@ -59,6 +79,15 @@ class URLScanResponse(BaseModel):
     normalized_url: Optional[str] = None
     domain: str
     canonical_domain: Optional[str] = None
+    subdomain: Optional[str] = None
+    registered_domain: Optional[str] = None
+    tld: Optional[str] = None
+    scheme: Optional[str] = None
+    port: Optional[int] = None
+    path: Optional[str] = None
+    query: Optional[str] = None
+    fragment: Optional[str] = None
+    components: Optional[URLComponents] = None
     punycode_domain: Optional[str] = None
     stripped_tracking_params: List[str] = Field(default_factory=list)
     risk_score: int = Field(..., ge=0, le=100)

@@ -301,6 +301,100 @@ export const UrlScanner = forwardRef<HTMLDivElement, UrlScannerProps>((_, ref) =
               </div>
             </div>
 
+            {/* 8-PART URL ARCHITECTURAL DECOMPOSITION */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                  URL ARCHITECTURAL DECOMPOSITION:
+                </h4>
+                <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-200/60 px-2 py-0.5 rounded">
+                  8-Part Discrete Parsing
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {/* 1. Scheme */}
+                <div className="p-2.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    SCHEME
+                  </span>
+                  <p className="font-mono text-xs font-bold text-indigo-700 truncate">
+                    {result.scheme || result.url_features.scheme || result.url_features.protocol || 'http'}
+                  </p>
+                </div>
+
+                {/* 2. Subdomain */}
+                <div className="p-2.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    SUBDOMAIN
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-800 truncate" title={result.subdomain || result.url_features.subdomain || '(none)'}>
+                    {result.subdomain || result.url_features.subdomain || <span className="text-slate-400 font-normal italic">none</span>}
+                  </p>
+                </div>
+
+                {/* 3. Registered Domain */}
+                <div className="p-2.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    REGISTERED DOMAIN
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900 truncate" title={result.registered_domain || result.url_features.registered_domain || result.domain}>
+                    {result.registered_domain || result.url_features.registered_domain || result.domain}
+                  </p>
+                </div>
+
+                {/* 4. TLD */}
+                <div className="p-2.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    TLD
+                  </span>
+                  <p className="font-mono text-xs font-bold text-emerald-700 truncate">
+                    .{result.tld || result.url_features.tld || result.url_features.detected_tld || 'unknown'}
+                  </p>
+                </div>
+
+                {/* 5. Port */}
+                <div className="p-2.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    PORT
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-800">
+                    {result.port || result.url_features.port || <span className="text-slate-400 font-normal italic">default</span>}
+                  </p>
+                </div>
+
+                {/* 6. Path */}
+                <div className="p-2.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    PATH
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-800 truncate" title={result.path || result.url_features.path || '/'}>
+                    {result.path || result.url_features.path || '/'}
+                  </p>
+                </div>
+
+                {/* 7. Query */}
+                <div className="p-2.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    QUERY
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-800 truncate" title={result.query || result.url_features.query || '(none)'}>
+                    {result.query || result.url_features.query || <span className="text-slate-400 font-normal italic">none</span>}
+                  </p>
+                </div>
+
+                {/* 8. Fragment */}
+                <div className="p-2.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    FRAGMENT
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-800 truncate" title={result.fragment || result.url_features.fragment || '(none)'}>
+                    {result.fragment || result.url_features.fragment || <span className="text-slate-400 font-normal italic">none</span>}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* STRUCTURAL HEURISTIC BREAKDOWN (6 CARDS) */}
             <div className="mb-6">
               <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 mb-3">
