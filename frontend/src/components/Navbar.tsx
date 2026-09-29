@@ -1,6 +1,6 @@
 import React from 'react';
 import { RedFlagIcon } from './RedFlagIcon';
-import { ShieldAlert, ExternalLink, Activity, Link2, MessageSquare, Home } from 'lucide-react';
+import { ShieldAlert, Link2, MessageSquare, Home } from 'lucide-react';
 
 interface NavbarProps {
   currentPage: 'home' | 'analyse';
@@ -13,7 +13,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentPage,
   activeAnalysisTab,
   onNavigate,
-  isBackendOnline,
 }) => {
   return (
     <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-[#F5F5F5]/90 border-b border-[#BBD5DA] transition-all">
@@ -72,51 +71,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <MessageSquare size={15} />
             <span>SMS Scanner</span>
           </button>
-
-          <a 
-            href="/#features"
-            onClick={(e) => {
-              if (currentPage !== 'home') {
-                e.preventDefault();
-                onNavigate('home');
-                setTimeout(() => {
-                  const el = document.getElementById('features');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
-              }
-            }}
-            className="text-sm font-semibold text-slate-700 hover:text-[#D10000] transition-colors"
-          >
-            Engine
-          </a>
-
-          <a 
-            href="/api/v1/docs" 
-            target="_blank" 
-            rel="noreferrer"
-            className="text-sm font-semibold text-slate-700 hover:text-[#D10000] transition-colors inline-flex items-center gap-1"
-          >
-            API Docs
-            <ExternalLink size={13} className="text-slate-400" />
-          </a>
         </nav>
 
-        {/* Right Section: Status Indicator & Analyse CTA */}
+        {/* Right Section: Analyse CTA Button */}
         <div className="flex items-center gap-4">
-          <div 
-            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border"
-            style={{ 
-              backgroundColor: isBackendOnline ? '#DFF1F1' : '#FEE2E2',
-              borderColor: isBackendOnline ? '#BBD5DA' : '#FCA5A5',
-              color: isBackendOnline ? '#0F766E' : '#B91C1C'
-            }}
-            title={isBackendOnline ? 'FastAPI link detection backend is active' : 'Connecting to backend engine...'}
-          >
-            <span className={`w-2 h-2 rounded-full ${isBackendOnline ? 'bg-emerald-500 animate-ping' : 'bg-red-500'}`} />
-            <Activity size={13} />
-            <span>{isBackendOnline ? 'Engine Online' : 'Engine Offline'}</span>
-          </div>
-
           <button
             onClick={() => onNavigate('analyse', 'link')}
             className="btn-redflag-glow px-5 py-2.5 rounded-full text-sm font-bold tracking-wide flex items-center gap-2 cursor-pointer shadow-md"

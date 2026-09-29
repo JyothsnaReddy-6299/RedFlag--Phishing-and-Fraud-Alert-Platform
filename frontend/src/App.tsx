@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { AnalysisPortal } from './components/AnalysisPortal';
-import { Features } from './components/Features';
 import { ThreatDatabase } from './components/ThreatDatabase';
 import { Footer } from './components/Footer';
 import { checkBackendHealth } from './services/api';
@@ -45,9 +44,6 @@ export function App() {
           <>
             {/* Landing Hero Section matching User Reference Image 1 */}
             <Hero onAnalyseClick={() => handleNavigate('analyse', 'link')} />
-
-            {/* Detection Engine Pillars */}
-            <Features />
 
             {/* Live Seed Threat Feeds */}
             <ThreatDatabase />
