@@ -38,6 +38,25 @@ export interface HomographAnalysis {
   summary_message: string;
 }
 
+export interface BrandAnalysisDetails {
+  is_official_domain: boolean;
+  official_brand_name?: string | null;
+  brand_impersonated?: string | null;
+  brand_display_name?: string | null;
+  brand_similarity_score: number;
+  brand_similarity_rating: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  matched_token?: string | null;
+  target_brand?: string | null;
+  candidate_stem: string;
+  candidate_tld: string;
+  official_tlds: string[];
+  tld_mismatch: boolean;
+  deceptive_tokens: string[];
+  manipulation_types: string[];
+  signals: string[];
+  summary?: string | null;
+}
+
 export interface URLFeatureAnalysis {
   url: string;
   original_url?: string;
@@ -73,7 +92,13 @@ export interface URLFeatureAnalysis {
   detected_tld: string;
   suspicious_keywords: string[];
   brand_impersonated?: string | null;
+  brand_display_name?: string | null;
   brand_similarity_score: number;
+  brand_similarity_rating?: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  tld_mismatch?: boolean;
+  deceptive_tokens?: string[];
+  manipulation_types?: string[];
+  brand_analysis?: BrandAnalysisDetails | null;
   is_official_domain: boolean;
   official_brand_name?: string | null;
   has_at_symbol: boolean;
@@ -107,6 +132,14 @@ export interface URLScanResponse {
   detected_scripts?: string[];
   homograph_summary?: string;
   homograph_analysis?: HomographAnalysis;
+  brand_impersonated?: string | null;
+  brand_display_name?: string | null;
+  brand_similarity_score?: number;
+  brand_similarity_rating?: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  tld_mismatch?: boolean;
+  deceptive_tokens?: string[];
+  manipulation_types?: string[];
+  brand_analysis?: BrandAnalysisDetails | null;
   stripped_tracking_params?: string[];
   risk_score: number;
   risk_level: RiskLevel;

@@ -1,8 +1,9 @@
 import math
 import re
 from typing import List, Tuple, Optional, Dict
-from app.models.schemas import URLFeatureAnalysis, URLComponents, HomographAnalysis
+from app.models.schemas import URLFeatureAnalysis, URLComponents, HomographAnalysis, BrandAnalysisDetails
 from app.services.url_normalizer import url_normalizer, URLComponents as URLComponentsData
+from app.services.brand_matcher import brand_matcher, BrandMatchResult
 
 SUSPICIOUS_TLDS = {
     "xyz", "top", "club", "work", "click", "buzz", "rest", "cam", "live",
@@ -325,6 +326,10 @@ class URLAnalyzer:
 
         # Check official domain status FIRST
         is_official, official_brand = self.check_official_domain(domain)
+        if not is_official:
+            is_off, off_name = brand_matcher.is_official_domain(registered_domain or domain)
+            if is_off:
+                is_official, official_brand = True, off_name
         if not is_official and registered_domain != domain:
             is_official, official_brand = self.check_official_domain(registered_domain)
         if not is_official and norm.hostname != domain:
@@ -353,13 +358,69 @@ class URLAnalyzer:
         # 6. Sensitive keywords
         found_keywords = [kw for kw in SUSPICIOUS_KEYWORDS if kw in full_url.lower() or kw in norm.original_url.lower()]
 
-        # 7. Brand Impersonation check (Only if domain is NOT verified official)
+        # 7. Advanced Brand Impersonation check on Registered Domain (stem/SLD)
         impersonated_brand = None
         similarity_score = 0.0
+        similarity_rating = "NONE"
+        tld_mismatch = False
+        deceptive_tokens: List[str] = []
+        manipulation_types: List[str] = []
         impersonation_signals: List[str] = []
+        brand_details_model: Optional[BrandAnalysisDetails] = None
 
         if not is_official:
-            impersonated_brand, similarity_score, impersonation_signals = self._check_brand_impersonation(domain, full_url)
+            brand_res = brand_matcher.analyze_domain(registered_domain, tld)
+            if brand_res.brand_impersonated:
+                impersonated_brand = brand_res.brand_impersonated
+                similarity_score = brand_res.brand_similarity_score
+                similarity_rating = brand_res.brand_similarity_rating
+                tld_mismatch = brand_res.tld_mismatch
+                deceptive_tokens = brand_res.deceptive_tokens
+                manipulation_types = brand_res.manipulation_types
+                impersonation_signals.extend(brand_res.signals)
+
+            # Also check if subdomain impersonates a brand (e.g. amazon.phishing.xyz)
+            if subdomain and not impersonated_brand:
+                sub_res = brand_matcher.analyze_domain(subdomain, "")
+                if sub_res.brand_impersonated:
+                    impersonated_brand = sub_res.brand_impersonated
+                    similarity_score = sub_res.brand_similarity_score
+                    similarity_rating = sub_res.brand_similarity_rating
+                    tld_mismatch = True
+                    deceptive_tokens = sub_res.deceptive_tokens
+                    manipulation_types = ["subdomain impersonation"] + sub_res.manipulation_types
+                    impersonation_signals.append(f"Subdomain brand impersonation: Deceptive brand '{sub_res.brand_impersonated}' prepended as subdomain on untrusted domain '{registered_domain}'")
+                    if sub_res.tld_mismatch:
+                        impersonation_signals.append(f"TLD mismatch: Candidate domain uses '.{tld}'")
+
+            # Fallback legacy checks if brand not yet found (e.g. brand in path)
+            if not impersonated_brand:
+                legacy_brand, legacy_sim, legacy_sigs = self._check_brand_impersonation(domain, full_url)
+                if legacy_brand:
+                    impersonated_brand = legacy_brand
+                    similarity_score = legacy_sim
+                    similarity_rating = "HIGH" if legacy_sim >= 0.85 else "MEDIUM"
+                    impersonation_signals.extend(legacy_sigs)
+
+            if impersonated_brand or brand_res.is_official_domain:
+                brand_details_model = BrandAnalysisDetails(
+                    is_official_domain=is_official or brand_res.is_official_domain,
+                    official_brand_name=official_brand or brand_res.official_brand_name,
+                    brand_impersonated=impersonated_brand,
+                    brand_display_name=brand_res.brand_display_name or (official_brand if is_official else impersonated_brand),
+                    brand_similarity_score=similarity_score,
+                    brand_similarity_rating=similarity_rating,
+                    matched_token=brand_res.matched_token,
+                    target_brand=brand_res.target_brand,
+                    candidate_stem=brand_res.candidate_stem,
+                    candidate_tld=brand_res.candidate_tld,
+                    official_tlds=brand_res.official_tlds,
+                    tld_mismatch=tld_mismatch,
+                    deceptive_tokens=deceptive_tokens,
+                    manipulation_types=manipulation_types,
+                    signals=impersonation_signals,
+                    summary=brand_res.summary
+                )
 
         # 8. Threat Signal Aggregation
         signals: List[str] = []
@@ -444,6 +505,10 @@ class URLAnalyzer:
             if impersonated_brand:
                 signals.extend(impersonation_signals)
                 score += 50.0
+                if tld_mismatch:
+                    score += 15.0
+                if deceptive_tokens:
+                    score += min(20.0, len(deceptive_tokens) * 8.0)
 
             if len(found_keywords) >= 2:
                 signals.append(f"Multiple social-engineering keywords in URL: {', '.join(found_keywords[:4])}")
@@ -515,6 +580,11 @@ class URLAnalyzer:
             suspicious_keywords=found_keywords,
             brand_impersonated=impersonated_brand,
             brand_similarity_score=similarity_score,
+            brand_similarity_rating=similarity_rating,
+            tld_mismatch=tld_mismatch,
+            deceptive_tokens=deceptive_tokens,
+            manipulation_types=manipulation_types,
+            brand_analysis=brand_details_model,
             is_official_domain=is_official,
             official_brand_name=official_brand,
             has_at_symbol=has_at_symbol,

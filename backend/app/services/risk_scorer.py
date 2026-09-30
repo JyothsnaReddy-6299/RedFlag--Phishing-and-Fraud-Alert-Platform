@@ -32,6 +32,13 @@ class URLRiskScorer:
                 detected_scripts=features.detected_scripts,
                 homograph_summary=features.homograph_summary,
                 homograph_analysis=features.homograph_analysis,
+                brand_impersonated=None,
+                brand_similarity_score=1.0,
+                brand_similarity_rating="NONE",
+                tld_mismatch=False,
+                deceptive_tokens=[],
+                manipulation_types=[],
+                brand_analysis=features.brand_analysis,
                 stripped_tracking_params=features.stripped_tracking_params,
                 risk_score=0,
                 risk_level=RiskLevel.SAFE_LOW,
@@ -102,8 +109,14 @@ class URLRiskScorer:
                     sample = features.confusables_detected[0]
                     advice.append(f"Visual spoofing detected: '{sample.get('char')}' ({sample.get('script')}) mimics Latin '{sample.get('target_char')}'.")
             elif features.brand_impersonated:
-                explanation = f"CRITICAL THREAT: Deceptive link falsely mimicking {features.brand_impersonated} via lookalike domain, anagram, or typosquatting transposition."
+                mismatch_info = f", TLD mismatch (uses .{features.tld})" if features.tld_mismatch else ""
+                tokens_info = f", deceptive tokens ({', '.join(features.deceptive_tokens)})" if features.deceptive_tokens else ""
+                explanation = f"CRITICAL THREAT: Brand impersonation detected — target brand {features.brand_impersonated} (similarity = {features.brand_similarity_rating.lower()}{mismatch_info}{tokens_info})."
                 advice.append(f"This domain deceptively mimics {features.brand_impersonated}. Do NOT enter account credentials, passwords, or OTPs.")
+                if features.tld_mismatch:
+                    advice.append(f"TLD Mismatch: Candidate domain uses '.{features.tld}' instead of the brand's verified authentic domain registry.")
+                if features.deceptive_tokens:
+                    advice.append(f"Deceptive token(s) detected ({', '.join(features.deceptive_tokens)}) weaponized to create a false sense of official security.")
             else:
                 explanation = f"CRITICAL THREAT: Verified malicious URL ({category.value}) designed to steal credentials or financial assets."
             advice.append("IMMEDIATE WARNING: Avoid visiting or interacting with this host.")
@@ -131,6 +144,13 @@ class URLRiskScorer:
             detected_scripts=features.detected_scripts,
             homograph_summary=features.homograph_summary,
             homograph_analysis=features.homograph_analysis,
+            brand_impersonated=features.brand_impersonated,
+            brand_similarity_score=features.brand_similarity_score,
+            brand_similarity_rating=features.brand_similarity_rating,
+            tld_mismatch=features.tld_mismatch,
+            deceptive_tokens=features.deceptive_tokens,
+            manipulation_types=features.manipulation_types,
+            brand_analysis=features.brand_analysis,
             stripped_tracking_params=features.stripped_tracking_params,
             risk_score=final_score,
             risk_level=level,

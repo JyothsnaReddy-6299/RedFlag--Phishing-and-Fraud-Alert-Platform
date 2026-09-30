@@ -311,6 +311,81 @@ export const UrlScanner = forwardRef<HTMLDivElement, UrlScannerProps>((_, ref) =
                       </p>
                     </div>
                   ) : null}
+
+                  {/* BRAND IMPERSONATION & TYPOSQUATTING INTELLIGENCE CARD */}
+                  {(result.brand_impersonated || result.url_features?.brand_impersonated) && !result.url_features?.is_official_domain && (
+                    <div className="p-3 rounded-xl bg-amber-50/90 border border-amber-300 mt-2 space-y-2 animate-fadeIn">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-[#D10000] text-white">
+                          BRAND SIMILARITY: {result.brand_similarity_rating || result.url_features?.brand_similarity_rating || 'HIGH'}
+                        </span>
+                        <span className="text-xs font-black text-slate-800">
+                          Target Brand: <span className="text-[#D10000] underline decoration-dotted">{result.url_features?.brand_display_name || result.brand_display_name || result.brand_impersonated || result.url_features?.brand_impersonated}</span>
+                        </span>
+                        {(result.url_features?.brand_similarity_score ?? result.brand_similarity_score ?? 0) > 0 && (
+                          <span className="text-[11px] font-mono font-bold bg-white px-1.5 py-0.5 rounded border border-amber-300 text-amber-900">
+                            {Math.round(((result.url_features?.brand_similarity_score ?? result.brand_similarity_score) || 0) * 100)}% Match
+                          </span>
+                        )}
+                        {(result.tld_mismatch ?? result.url_features?.tld_mismatch) && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-800 border border-red-300">
+                            TLD MISMATCH
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Domain Stem & TLD breakdown */}
+                      <div className="text-xs text-slate-700 flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 border-t border-amber-200">
+                        <span>
+                          <span className="font-semibold text-slate-500">Evaluated Domain Stem:</span>{' '}
+                          <span className="font-mono font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                            {result.url_features?.brand_analysis?.candidate_stem || result.registered_domain || result.url_features?.registered_domain}
+                          </span>
+                        </span>
+
+                        {(result.tld_mismatch ?? result.url_features?.tld_mismatch) && (
+                          <span>
+                            <span className="font-semibold text-slate-500">TLD Comparison:</span>{' '}
+                            <span className="font-mono font-bold text-red-700">
+                              .{result.tld || result.url_features?.tld} (Candidate)
+                            </span>{' '}
+                            <span className="text-slate-400 font-semibold">vs</span>{' '}
+                            <span className="font-mono font-bold text-emerald-700">
+                              {result.url_features?.brand_analysis?.official_tlds?.length
+                                ? result.url_features.brand_analysis.official_tlds.map(t => '.' + t).slice(0, 4).join(', ')
+                                : '.com, .in'} (Official)
+                            </span>
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Additional Deceptive Tokens */}
+                      {((result.deceptive_tokens && result.deceptive_tokens.length > 0) ||
+                        (result.url_features?.deceptive_tokens && result.url_features.deceptive_tokens.length > 0)) && (
+                        <div className="flex items-center gap-1.5 flex-wrap text-xs text-slate-700 pt-1 border-t border-amber-200">
+                          <span className="text-[10px] font-bold uppercase text-amber-900">Additional Deceptive Tokens:</span>
+                          {(result.deceptive_tokens || result.url_features?.deceptive_tokens || []).map((token, idx) => (
+                            <span key={idx} className="bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded text-[11px] font-mono font-bold border border-amber-300">
+                              {token}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Deceptive Manipulations Detected */}
+                      {((result.manipulation_types && result.manipulation_types.length > 0) ||
+                        (result.url_features?.manipulation_types && result.url_features.manipulation_types.length > 0)) && (
+                        <div className="flex items-center gap-1.5 flex-wrap text-xs text-slate-700 pt-1 border-t border-amber-200">
+                          <span className="text-[10px] font-bold uppercase text-slate-600">Manipulations Detected:</span>
+                          {(result.manipulation_types || result.url_features?.manipulation_types || []).map((manip, idx) => (
+                            <span key={idx} className="bg-white text-slate-800 px-1.5 py-0.5 rounded text-[11px] font-mono border border-slate-300">
+                              {manip}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -504,10 +579,15 @@ export const UrlScanner = forwardRef<HTMLDivElement, UrlScannerProps>((_, ref) =
                       <span>Official {result.url_features.official_brand_name || 'Portal'}</span>
                     </p>
                   ) : result.url_features.brand_impersonated ? (
-                    <p className="text-sm font-bold text-[#D10000] flex items-center gap-1">
-                      <AlertTriangle size={15} />
-                      <span>Mimics {result.url_features.brand_impersonated}</span>
-                    </p>
+                    <div>
+                      <p className="text-sm font-bold text-[#D10000] flex items-center gap-1">
+                        <AlertTriangle size={15} />
+                        <span>Mimics {result.url_features.brand_display_name || result.url_features.brand_impersonated}</span>
+                      </p>
+                      <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                        Similarity: {result.url_features.brand_similarity_rating || 'HIGH'} ({Math.round(result.url_features.brand_similarity_score * 100)}%)
+                      </p>
+                    </div>
                   ) : (
                     <p className="text-sm font-medium text-slate-600">None detected</p>
                   )}

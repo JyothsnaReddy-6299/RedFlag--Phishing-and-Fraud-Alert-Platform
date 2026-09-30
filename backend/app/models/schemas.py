@@ -39,6 +39,26 @@ class HomographAnalysis(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class BrandAnalysisDetails(BaseModel):
+    is_official_domain: bool = False
+    official_brand_name: Optional[str] = None
+    brand_impersonated: Optional[str] = None
+    brand_display_name: Optional[str] = None
+    brand_similarity_score: float = 0.0
+    brand_similarity_rating: str = "NONE"
+    matched_token: Optional[str] = None
+    target_brand: Optional[str] = None
+    candidate_stem: str = ""
+    candidate_tld: str = ""
+    official_tlds: List[str] = Field(default_factory=list)
+    tld_mismatch: bool = False
+    deceptive_tokens: List[str] = Field(default_factory=list)
+    manipulation_types: List[str] = Field(default_factory=list)
+    signals: List[str] = Field(default_factory=list)
+    summary: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
 class URLFeatureAnalysis(BaseModel):
     url: str
     original_url: Optional[str] = None
@@ -75,6 +95,11 @@ class URLFeatureAnalysis(BaseModel):
     suspicious_keywords: List[str] = Field(default_factory=list)
     brand_impersonated: Optional[str] = None
     brand_similarity_score: float = 0.0
+    brand_similarity_rating: str = "NONE"
+    tld_mismatch: bool = False
+    deceptive_tokens: List[str] = Field(default_factory=list)
+    manipulation_types: List[str] = Field(default_factory=list)
+    brand_analysis: Optional[BrandAnalysisDetails] = None
     is_official_domain: bool = False
     official_brand_name: Optional[str] = None
     has_at_symbol: bool = False
@@ -112,6 +137,13 @@ class URLScanResponse(BaseModel):
     detected_scripts: List[str] = Field(default_factory=list)
     homograph_summary: Optional[str] = None
     homograph_analysis: Optional[HomographAnalysis] = None
+    brand_impersonated: Optional[str] = None
+    brand_similarity_score: float = 0.0
+    brand_similarity_rating: str = "NONE"
+    tld_mismatch: bool = False
+    deceptive_tokens: List[str] = Field(default_factory=list)
+    manipulation_types: List[str] = Field(default_factory=list)
+    brand_analysis: Optional[BrandAnalysisDetails] = None
     stripped_tracking_params: List[str] = Field(default_factory=list)
     risk_score: int = Field(..., ge=0, le=100)
     risk_level: RiskLevel
