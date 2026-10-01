@@ -76,6 +76,22 @@ export interface SemanticPatterns {
   evidence_note: string;
 }
 
+export interface EntropyAnalysis {
+  domain_entropy: number;
+  subdomain_entropy: number;
+  path_entropy: number;
+  query_entropy: number;
+  overall_entropy: number;
+  is_high_domain_entropy: boolean;
+  is_high_subdomain_entropy: boolean;
+  is_high_path_entropy: boolean;
+  is_high_query_entropy: boolean;
+  has_compound_risk: boolean;
+  compound_explanation?: string | null;
+  signals: string[];
+  evaluation_note?: string;
+}
+
 export interface LexicalFeatureVector {
   url_length: number;
   domain_length: number;
@@ -98,6 +114,9 @@ export interface LexicalFeatureVector {
   has_punycode: boolean;
   has_percent_encoding: boolean;
   semantic_patterns: SemanticPatterns;
+  domain_entropy?: number;
+  path_entropy?: number;
+  query_entropy?: number;
   evidence_summary: string;
 }
 
@@ -147,6 +166,11 @@ export interface URLFeatureAnalysis {
   has_punycode?: boolean;
   has_percent_encoding?: boolean;
   entropy: number;
+  domain_entropy?: number;
+  subdomain_entropy?: number;
+  path_entropy?: number;
+  query_entropy?: number;
+  entropy_analysis?: EntropyAnalysis | null;
   suspicious_tld: boolean;
   detected_tld: string;
   suspicious_keywords: string[];
@@ -193,6 +217,11 @@ export interface URLScanResponse {
   detected_scripts?: string[];
   homograph_summary?: string;
   homograph_analysis?: HomographAnalysis;
+  domain_entropy?: number;
+  subdomain_entropy?: number;
+  path_entropy?: number;
+  query_entropy?: number;
+  entropy_analysis?: EntropyAnalysis | null;
   lexical_vector?: LexicalFeatureVector | null;
   brand_impersonated?: string | null;
   brand_display_name?: string | null;

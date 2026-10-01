@@ -56,6 +56,9 @@ class SemanticPatterns(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+from backend.app.services.entropy_analyzer import calculate_shannon_entropy
+
+
 class LexicalFeatureVector(BaseModel):
     url_length: int
     domain_length: int
@@ -78,6 +81,9 @@ class LexicalFeatureVector(BaseModel):
     has_punycode: bool
     has_percent_encoding: bool
     semantic_patterns: SemanticPatterns
+    domain_entropy: float = 0.0
+    path_entropy: float = 0.0
+    query_entropy: float = 0.0
     evidence_summary: str = "A suspicious keyword is evidence, not proof"
 
     model_config = ConfigDict(from_attributes=True)
@@ -222,6 +228,13 @@ class LexicalAnalyzer:
         # Semantic patterns
         semantic_patterns = self.extract_semantic_patterns(url_target)
 
+        # Discrete Shannon entropy calculations
+        dom_entropy = calculate_shannon_entropy(dom_clean)
+        path_clean_str = path_str.strip("/")
+        path_entropy = calculate_shannon_entropy(path_clean_str) if len(path_clean_str) > 3 else 0.0
+        query_clean_str = query_str.lstrip("?")
+        query_entropy = calculate_shannon_entropy(query_clean_str) if len(query_clean_str) > 3 else 0.0
+
         return LexicalFeatureVector(
             url_length=url_len,
             domain_length=dom_len,
@@ -244,6 +257,9 @@ class LexicalAnalyzer:
             has_punycode=has_punycode,
             has_percent_encoding=has_percent,
             semantic_patterns=semantic_patterns,
+            domain_entropy=dom_entropy,
+            path_entropy=path_entropy,
+            query_entropy=query_entropy,
             evidence_summary="A suspicious keyword is evidence, not proof"
         )
 

@@ -79,6 +79,26 @@ class SemanticPatterns(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class EntropyAnalysis(BaseModel):
+    domain_entropy: float = 0.0
+    subdomain_entropy: float = 0.0
+    path_entropy: float = 0.0
+    query_entropy: float = 0.0
+    overall_entropy: float = 0.0
+    is_high_domain_entropy: bool = False
+    is_high_subdomain_entropy: bool = False
+    is_high_path_entropy: bool = False
+    is_high_query_entropy: bool = False
+    has_compound_risk: bool = False
+    compound_explanation: Optional[str] = None
+    signals: List[str] = Field(default_factory=list)
+    evaluation_note: str = (
+        "Entropy is evaluated contextually (High Entropy + Untrusted Domain + Brand Impersonation), "
+        "not as an isolated malicious verdict."
+    )
+
+    model_config = ConfigDict(from_attributes=True)
+
 class LexicalFeatureVector(BaseModel):
     url_length: int
     domain_length: int
@@ -101,6 +121,9 @@ class LexicalFeatureVector(BaseModel):
     has_punycode: bool
     has_percent_encoding: bool
     semantic_patterns: SemanticPatterns
+    domain_entropy: float = 0.0
+    path_entropy: float = 0.0
+    query_entropy: float = 0.0
     evidence_summary: str = "A suspicious keyword is evidence, not proof"
 
     model_config = ConfigDict(from_attributes=True)
@@ -151,6 +174,11 @@ class URLFeatureAnalysis(BaseModel):
     has_punycode: bool = False
     has_percent_encoding: bool = False
     entropy: float
+    domain_entropy: float = 0.0
+    subdomain_entropy: float = 0.0
+    path_entropy: float = 0.0
+    query_entropy: float = 0.0
+    entropy_analysis: Optional[EntropyAnalysis] = None
     suspicious_tld: bool
     detected_tld: str
     suspicious_keywords: List[str] = Field(default_factory=list)
@@ -200,6 +228,11 @@ class URLScanResponse(BaseModel):
     detected_scripts: List[str] = Field(default_factory=list)
     homograph_summary: Optional[str] = None
     homograph_analysis: Optional[HomographAnalysis] = None
+    domain_entropy: Optional[float] = None
+    subdomain_entropy: Optional[float] = None
+    path_entropy: Optional[float] = None
+    query_entropy: Optional[float] = None
+    entropy_analysis: Optional[EntropyAnalysis] = None
     lexical_vector: Optional[LexicalFeatureVector] = None
     brand_impersonated: Optional[str] = None
     brand_similarity_score: float = 0.0

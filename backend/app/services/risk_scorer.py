@@ -39,6 +39,11 @@ class URLRiskScorer:
                 deceptive_tokens=[],
                 manipulation_types=[],
                 brand_analysis=features.brand_analysis,
+                domain_entropy=features.domain_entropy,
+                subdomain_entropy=features.subdomain_entropy,
+                path_entropy=features.path_entropy,
+                query_entropy=features.query_entropy,
+                entropy_analysis=features.entropy_analysis,
                 lexical_vector=features.lexical_vector,
                 stripped_tracking_params=features.stripped_tracking_params,
                 risk_score=0,
@@ -121,7 +126,9 @@ class URLRiskScorer:
             else:
                 explanation = f"CRITICAL THREAT: Verified malicious URL ({category.value}) designed to steal credentials or financial assets."
             advice.append("IMMEDIATE WARNING: Avoid visiting or interacting with this host.")
-            advice.append("If you have entered passwords or banking PINs, freeze your account and reset your passwords immediately.")
+        if features.entropy_analysis and features.entropy_analysis.has_compound_risk:
+            factors.append(features.entropy_analysis.compound_explanation or "Compound Threat: High structural entropy + untrusted namespace + brand similarity")
+            advice.append("Algorithmic randomness detected on an untrusted domain impersonating a brand (likely automated DGA/phishing kit).")
 
         return URLScanResponse(
             url=features.url,
@@ -152,6 +159,11 @@ class URLRiskScorer:
             deceptive_tokens=features.deceptive_tokens,
             manipulation_types=features.manipulation_types,
             brand_analysis=features.brand_analysis,
+            domain_entropy=features.domain_entropy,
+            subdomain_entropy=features.subdomain_entropy,
+            path_entropy=features.path_entropy,
+            query_entropy=features.query_entropy,
+            entropy_analysis=features.entropy_analysis,
             lexical_vector=features.lexical_vector,
             stripped_tracking_params=features.stripped_tracking_params,
             risk_score=final_score,

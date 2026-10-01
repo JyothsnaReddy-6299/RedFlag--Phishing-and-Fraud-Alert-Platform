@@ -548,27 +548,76 @@ export const UrlScanner = forwardRef<HTMLDivElement, UrlScannerProps>((_, ref) =
                 </div>
 
                 {/* 2. SHANNON ENTROPY */}
-                <div className="p-3.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-                      SHANNON ENTROPY
-                    </span>
-                    <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                        result.url_features.entropy > 4.0
-                          ? 'bg-red-100 text-red-700'
-                          : result.url_features.entropy > 3.3
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-emerald-100 text-emerald-800'
-                      }`}
-                    >
-                      {result.url_features.entropy > 4.0 ? 'High' : 'Normal'}
-                    </span>
-                  </div>
-                  <p className="font-mono text-sm font-bold text-slate-900">
-                    {result.url_features.entropy.toFixed(3)}
-                  </p>
-                </div>
+                {(() => {
+                  const entAnalysis = result.entropy_analysis || result.url_features?.entropy_analysis;
+                  const domEnt = result.domain_entropy ?? result.url_features?.domain_entropy ?? result.url_features.entropy ?? 0;
+                  const subEnt = result.subdomain_entropy ?? result.url_features?.subdomain_entropy ?? 0.0;
+                  const pathEnt = result.path_entropy ?? result.url_features?.path_entropy ?? 0.0;
+                  const queryEnt = result.query_entropy ?? result.url_features?.query_entropy ?? 0.0;
+                  const hasCompound = Boolean(entAnalysis?.has_compound_risk);
+
+                  return (
+                    <div className="p-3.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5] flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                            SHANNON ENTROPY
+                          </span>
+                          {hasCompound ? (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-[#D10000] text-white shadow-sm flex items-center gap-1">
+                              <AlertTriangle size={10} />
+                              Compound Risk
+                            </span>
+                          ) : (
+                            <span
+                              className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                                domEnt > 3.8
+                                  ? 'bg-red-100 text-red-700'
+                                  : domEnt > 3.3
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-emerald-100 text-emerald-800'
+                              }`}
+                            >
+                              {domEnt > 3.8 ? 'Elevated' : domEnt > 3.3 ? 'Moderate' : 'Normal'}
+                            </span>
+                          )}
+                        </div>
+                        <p className="font-mono text-sm font-bold text-slate-900">
+                          {domEnt.toFixed(3)} <span className="text-[11px] font-normal text-slate-500">bits</span>
+                        </p>
+                      </div>
+
+                      {/* Component breakdown: domain, subdomain, path, query */}
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-1 pt-2 mt-2 border-t border-slate-200/80 text-[10px] font-mono">
+                        <div className="flex justify-between items-center text-slate-600">
+                          <span className="text-slate-400">Dom:</span>
+                          <span className="font-bold text-slate-800">{domEnt.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-slate-600">
+                          <span className="text-slate-400">Sub:</span>
+                          <span className="font-bold text-slate-800">{subEnt.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-slate-600">
+                          <span className="text-slate-400">Path:</span>
+                          <span className="font-bold text-slate-800">{pathEnt.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-slate-600">
+                          <span className="text-slate-400">Query:</span>
+                          <span className="font-bold text-slate-800">{queryEnt.toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      {hasCompound && (
+                        <div className="mt-2 text-[10px] text-[#D10000] font-semibold flex items-center gap-1 bg-red-50 p-1 rounded border border-red-200">
+                          <AlertTriangle size={11} className="shrink-0" />
+                          <span className="truncate" title="High entropy + untrusted namespace + brand impersonation">
+                            High Entropy + Untrusted + Brand
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* 3. BRAND MIMICKED */}
                 <div className="p-3.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5]">
@@ -926,6 +975,36 @@ export const UrlScanner = forwardRef<HTMLDivElement, UrlScannerProps>((_, ref) =
                       : 'text-slate-700'
                   }`}>
                     {(result.url_features?.lexical_vector?.has_percent_encoding ?? result.url_features.has_hex_encoding) ? 'true' : 'false'}
+                  </p>
+                </div>
+
+                {/* 21. domain_entropy */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    domain_entropy
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {(result.url_features?.lexical_vector?.domain_entropy ?? result.url_features?.domain_entropy ?? result.domain_entropy ?? 0).toFixed(2)}
+                  </p>
+                </div>
+
+                {/* 22. path_entropy */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    path_entropy
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {(result.url_features?.lexical_vector?.path_entropy ?? result.url_features?.path_entropy ?? result.path_entropy ?? 0).toFixed(2)}
+                  </p>
+                </div>
+
+                {/* 23. query_entropy */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    query_entropy
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {(result.url_features?.lexical_vector?.query_entropy ?? result.url_features?.query_entropy ?? result.query_entropy ?? 0).toFixed(2)}
                   </p>
                 </div>
               </div>

@@ -1,10 +1,14 @@
 import math
 import re
 from typing import List, Tuple, Optional, Dict
-from app.models.schemas import URLFeatureAnalysis, URLComponents, HomographAnalysis, BrandAnalysisDetails, LexicalFeatureVector, SemanticPatterns
+from app.models.schemas import (
+    URLFeatureAnalysis, URLComponents, HomographAnalysis, BrandAnalysisDetails,
+    LexicalFeatureVector, SemanticPatterns, EntropyAnalysis
+)
 from app.services.url_normalizer import url_normalizer, URLComponents as URLComponentsData
 from app.services.brand_matcher import brand_matcher, BrandMatchResult
 from app.services.lexical_analyzer import lexical_analyzer
+from app.services.entropy_analyzer import entropy_analyzer, calculate_shannon_entropy
 
 SUSPICIOUS_TLDS = {
     "xyz", "top", "club", "work", "click", "buzz", "rest", "cam", "live",
@@ -435,7 +439,20 @@ class URLAnalyzer:
                     summary=brand_res.summary
                 )
 
-        # 8. Threat Signal Aggregation
+        # 8. Separate Shannon Entropy (Domain, Subdomain, Path, Query) & Compound Vector Evaluation
+        entropy_res = entropy_analyzer.analyze(
+            domain=domain,
+            subdomain=subdomain,
+            path=norm.path,
+            query=query,
+            is_untrusted_domain=(not is_official),
+            is_suspicious_tld=suspicious_tld,
+            brand_impersonated=impersonated_brand,
+            is_official_domain=is_official
+        )
+        entropy = entropy_res.overall_entropy
+
+        # 9. Threat Signal Aggregation
         signals: List[str] = []
         score = 0.0
 
@@ -506,9 +523,16 @@ class URLAnalyzer:
                 signals.append(f"Unusually deep subdomain nesting ({subdomain_count} subdomains)")
                 score += 20.0
 
-            if entropy > 4.2:
-                signals.append(f"High Shannon entropy ({entropy}) indicating algorithmically generated domain name")
-                score += 18.0
+            # Compound Threat Vector: High Entropy + Untrusted Domain + Brand Impersonation
+            if entropy_res.has_compound_risk:
+                signals.extend(entropy_res.signals)
+                score += 25.0
+            elif entropy_res.signals:
+                signals.extend(entropy_res.signals)
+                if entropy_res.is_high_domain_entropy and suspicious_tld:
+                    score += 18.0
+                elif entropy_res.is_high_domain_entropy:
+                    score += 10.0
 
             if port and port not in [80, 443]:
                 signals.append(f"URL uses non-standard network port (:{port})")
@@ -602,7 +626,12 @@ class URLAnalyzer:
             has_port=lexical_vec.has_port,
             has_punycode=lexical_vec.has_punycode,
             has_percent_encoding=lexical_vec.has_percent_encoding,
-            entropy=entropy,
+            entropy=entropy_res.overall_entropy,
+            domain_entropy=entropy_res.domain_entropy,
+            subdomain_entropy=entropy_res.subdomain_entropy,
+            path_entropy=entropy_res.path_entropy,
+            query_entropy=entropy_res.query_entropy,
+            entropy_analysis=entropy_res,
             suspicious_tld=suspicious_tld,
             detected_tld=tld,
             suspicious_keywords=found_keywords,
