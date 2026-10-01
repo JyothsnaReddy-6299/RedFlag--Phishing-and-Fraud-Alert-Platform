@@ -44,6 +44,16 @@ class URLRiskScorer:
                 path_entropy=features.path_entropy,
                 query_entropy=features.query_entropy,
                 entropy_analysis=features.entropy_analysis,
+                network_analysis=features.network_analysis,
+                is_ip_host=features.is_ip_host,
+                dns_resolved=features.dns_resolved,
+                dns_failure=features.dns_failure,
+                ip_version=features.ip_version,
+                resolved_ips=features.resolved_ips,
+                has_multiple_ips=features.has_multiple_ips,
+                is_unusual_port=features.is_unusual_port,
+                asn=features.asn,
+                asn_org=features.asn_org,
                 lexical_vector=features.lexical_vector,
                 stripped_tracking_params=features.stripped_tracking_params,
                 risk_score=0,
@@ -130,6 +140,18 @@ class URLRiskScorer:
             factors.append(features.entropy_analysis.compound_explanation or "Compound Threat: High structural entropy + untrusted namespace + brand similarity")
             advice.append("Algorithmic randomness detected on an untrusted domain impersonating a brand (likely automated DGA/phishing kit).")
 
+        if features.dns_failure:
+            factors.append("DNS Failure: Host does not resolve via DNS (unconfigured, sinkholed, or disposable domain)")
+            advice.append("Domain fails DNS resolution. Avoid interacting as the host may be an unconfigured or suspended phishing site.")
+
+        if features.is_ip_host:
+            factors.append(f"Direct IP Host: Accesses web server via raw IP address ({features.domain}) without verified domain identity")
+            advice.append("Avoid interacting with raw IP-based URLs. Legitimate organizations host public services on verified domains.")
+
+        if features.is_unusual_port:
+            factors.append(f"Non-Standard Port: Targets network port :{features.port}")
+            advice.append(f"URL targets non-standard network port :{features.port}. Legitimate banking and consumer portals run on standard HTTPS (:443).")
+
         return URLScanResponse(
             url=features.url,
             original_url=features.original_url or features.url,
@@ -164,6 +186,16 @@ class URLRiskScorer:
             path_entropy=features.path_entropy,
             query_entropy=features.query_entropy,
             entropy_analysis=features.entropy_analysis,
+            network_analysis=features.network_analysis,
+            is_ip_host=features.is_ip_host,
+            dns_resolved=features.dns_resolved,
+            dns_failure=features.dns_failure,
+            ip_version=features.ip_version,
+            resolved_ips=features.resolved_ips,
+            has_multiple_ips=features.has_multiple_ips,
+            is_unusual_port=features.is_unusual_port,
+            asn=features.asn,
+            asn_org=features.asn_org,
             lexical_vector=features.lexical_vector,
             stripped_tracking_params=features.stripped_tracking_params,
             risk_score=final_score,

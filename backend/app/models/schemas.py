@@ -99,6 +99,27 @@ class EntropyAnalysis(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class NetworkAnalysis(BaseModel):
+    is_ip_host: bool = False
+    ip_version: Optional[str] = None  # "IPv4", "IPv6", "Dual-Stack", or None
+    is_private_ip: bool = False
+    dns_resolved: bool = False
+    dns_failure: bool = False
+    dns_error_message: Optional[str] = None
+    resolved_ips: List[str] = Field(default_factory=list)
+    resolved_ipv4: List[str] = Field(default_factory=list)
+    resolved_ipv6: List[str] = Field(default_factory=list)
+    has_multiple_ips: bool = False
+    port: Optional[int] = None
+    is_unusual_port: bool = False
+    asn: Optional[str] = None
+    asn_org: Optional[str] = None
+    asn_country: Optional[str] = None
+    signal_flags: List[str] = Field(default_factory=list)
+    signals: List[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
 class LexicalFeatureVector(BaseModel):
     url_length: int
     domain_length: int
@@ -197,6 +218,16 @@ class URLFeatureAnalysis(BaseModel):
     has_double_slash: bool = False
     has_hex_encoding: bool = False
     has_homograph_attack: bool = False
+    network_analysis: Optional[NetworkAnalysis] = None
+    is_ip_host: bool = False
+    dns_resolved: bool = False
+    dns_failure: bool = False
+    ip_version: Optional[str] = None
+    resolved_ips: List[str] = Field(default_factory=list)
+    has_multiple_ips: bool = False
+    is_unusual_port: bool = False
+    asn: Optional[str] = None
+    asn_org: Optional[str] = None
     stripped_tracking_params: List[str] = Field(default_factory=list)
     threat_signals: List[str] = Field(default_factory=list)
     base_risk_score: float = 0.0
@@ -233,6 +264,16 @@ class URLScanResponse(BaseModel):
     path_entropy: Optional[float] = None
     query_entropy: Optional[float] = None
     entropy_analysis: Optional[EntropyAnalysis] = None
+    network_analysis: Optional[NetworkAnalysis] = None
+    is_ip_host: Optional[bool] = None
+    dns_resolved: Optional[bool] = None
+    dns_failure: Optional[bool] = None
+    ip_version: Optional[str] = None
+    resolved_ips: List[str] = Field(default_factory=list)
+    has_multiple_ips: Optional[bool] = None
+    is_unusual_port: Optional[bool] = None
+    asn: Optional[str] = None
+    asn_org: Optional[str] = None
     lexical_vector: Optional[LexicalFeatureVector] = None
     brand_impersonated: Optional[str] = None
     brand_similarity_score: float = 0.0

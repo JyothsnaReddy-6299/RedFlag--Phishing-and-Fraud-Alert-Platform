@@ -11,7 +11,8 @@ import {
   Sparkles,
   RotateCcw,
   Check,
-  Info
+  Info,
+  Network
 } from 'lucide-react';
 import type { URLScanResponse, RiskLevel } from '../types';
 import { scanUrl } from '../services/api';
@@ -700,6 +701,168 @@ export const UrlScanner = forwardRef<HTMLDivElement, UrlScannerProps>((_, ref) =
                 </div>
               </div>
             </div>
+
+            {/* NETWORK & INFRASTRUCTURE SIGNALS (BEYOND URL TEXT) */}
+            {(() => {
+              const net = result.network_analysis || result.url_features?.network_analysis;
+              const isIpHost = result.is_ip_host ?? result.url_features?.is_ip_host ?? result.url_features.ip_based ?? net?.is_ip_host ?? false;
+              const dnsResolved = result.dns_resolved ?? result.url_features?.dns_resolved ?? net?.dns_resolved ?? true;
+              const dnsFailure = result.dns_failure ?? result.url_features?.dns_failure ?? net?.dns_failure ?? false;
+              const ipVersion = result.ip_version ?? result.url_features?.ip_version ?? net?.ip_version ?? (isIpHost ? 'IPv4' : null);
+              const resolvedIps = result.resolved_ips || result.url_features?.resolved_ips || net?.resolved_ips || [];
+              const hasMultipleIps = result.has_multiple_ips ?? result.url_features?.has_multiple_ips ?? net?.has_multiple_ips ?? (resolvedIps.length > 1);
+              const isUnusualPort = result.is_unusual_port ?? result.url_features?.is_unusual_port ?? net?.is_unusual_port ?? (Boolean(result.port && ![80, 443].includes(result.port)));
+              const portNum = result.port ?? result.url_features?.port ?? net?.port ?? null;
+              const asn = result.asn ?? result.url_features?.asn ?? net?.asn ?? null;
+              const asnOrg = result.asn_org ?? result.url_features?.asn_org ?? net?.asn_org ?? null;
+
+              return (
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <Network size={16} className="text-[#D10000]" />
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                        NETWORK & INFRASTRUCTURE SIGNALS:
+                      </h4>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {isIpHost && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-700 border border-red-200">
+                          ip_based_url
+                        </span>
+                      )}
+                      {isUnusualPort && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-700 border border-red-200">
+                          unusual_port
+                        </span>
+                      )}
+                      {dnsFailure && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-700 border border-red-200">
+                          dns_failure
+                        </span>
+                      )}
+                      {hasMultipleIps && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                          multiple_ips
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    {/* 1. Host is IP? */}
+                    <div className="p-3 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5] flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                            HOST IS IP?
+                          </span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                            isIpHost ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'
+                          }`}>
+                            {isIpHost ? 'Yes (IP)' : 'No (Domain)'}
+                          </span>
+                        </div>
+                        <p className="font-mono text-xs font-bold text-slate-900 truncate" title={result.domain}>
+                          {isIpHost ? 'Direct IP Host' : 'Named Domain'}
+                        </p>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-2 font-mono truncate">
+                        {isIpHost ? (net?.is_private_ip ? 'Private RFC1918' : 'Public IP Address') : 'Standard Namespace'}
+                      </p>
+                    </div>
+
+                    {/* 2. DNS Resolves? */}
+                    <div className="p-3 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5] flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                            DNS RESOLVES?
+                          </span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                            dnsFailure ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'
+                          }`}>
+                            {dnsFailure ? 'Failed' : 'Resolved'}
+                          </span>
+                        </div>
+                        <p className={`font-mono text-xs font-bold ${dnsFailure ? 'text-[#D10000]' : 'text-slate-900'}`}>
+                          {dnsFailure ? 'DNS Failure' : (isIpHost ? 'IP Direct' : dnsResolved ? 'A/AAAA Records OK' : 'Unresolved')}
+                        </p>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-2 font-mono truncate">
+                        {dnsFailure ? (net?.dns_error_message || 'NXDOMAIN') : `${resolvedIps.length || 1} IP(s) mapped`}
+                      </p>
+                    </div>
+
+                    {/* 3. IPv4 / IPv6? */}
+                    <div className="p-3 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5] flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                            IPv4 / IPv6?
+                          </span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                            hasMultipleIps ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-700'
+                          }`}>
+                            {ipVersion || (resolvedIps.length > 0 ? 'IPv4' : 'N/A')}
+                          </span>
+                        </div>
+                        <p className="font-mono text-xs font-bold text-slate-900 truncate" title={resolvedIps.join(', ')}>
+                          {resolvedIps[0] || (isIpHost ? result.domain : 'Unassigned')}
+                        </p>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-2 font-mono truncate">
+                        {hasMultipleIps ? `${resolvedIps.length} distinct IPs (Multi-IP)` : 'Single IP routing'}
+                      </p>
+                    </div>
+
+                    {/* 4. Port? */}
+                    <div className="p-3 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5] flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                            PORT?
+                          </span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                            isUnusualPort ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'
+                          }`}>
+                            {isUnusualPort ? 'Unusual' : 'Standard'}
+                          </span>
+                        </div>
+                        <p className={`font-mono text-xs font-bold ${isUnusualPort ? 'text-[#D10000]' : 'text-slate-900'}`}>
+                          {portNum ? `Port :${portNum}` : (result.url_features.protocol.toUpperCase() === 'HTTPS' ? 'Port :443' : 'Port :80')}
+                        </p>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-2 font-mono truncate">
+                        {isUnusualPort ? 'High-risk non-standard port' : 'Default HTTP/S transport'}
+                      </p>
+                    </div>
+
+                    {/* 5. ASN? */}
+                    <div className="p-3 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5] flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                            ASN?
+                          </span>
+                          {asn && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-slate-200 text-slate-800 font-mono">
+                              BGP
+                            </span>
+                          )}
+                        </div>
+                        <p className="font-mono text-xs font-bold text-slate-900 truncate" title={asn || 'None'}>
+                          {asn || 'Unmapped ASN'}
+                        </p>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-2 font-mono truncate" title={asnOrg || 'Autonomous System'}>
+                        {asnOrg || (isIpHost ? 'Direct host ASN' : 'ISP / Cloud Network')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* STRUCTURED LEXICAL FEATURE VECTOR & SEMANTIC PATTERNS */}
             <div className="mb-6">

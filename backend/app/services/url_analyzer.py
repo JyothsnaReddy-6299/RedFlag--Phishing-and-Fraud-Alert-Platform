@@ -3,12 +3,13 @@ import re
 from typing import List, Tuple, Optional, Dict
 from app.models.schemas import (
     URLFeatureAnalysis, URLComponents, HomographAnalysis, BrandAnalysisDetails,
-    LexicalFeatureVector, SemanticPatterns, EntropyAnalysis
+    LexicalFeatureVector, SemanticPatterns, EntropyAnalysis, NetworkAnalysis
 )
 from app.services.url_normalizer import url_normalizer, URLComponents as URLComponentsData
 from app.services.brand_matcher import brand_matcher, BrandMatchResult
 from app.services.lexical_analyzer import lexical_analyzer
 from app.services.entropy_analyzer import entropy_analyzer, calculate_shannon_entropy
+from app.services.network_analyzer import network_analyzer
 
 SUSPICIOUS_TLDS = {
     "xyz", "top", "club", "work", "click", "buzz", "rest", "cam", "live",
@@ -452,7 +453,14 @@ class URLAnalyzer:
         )
         entropy = entropy_res.overall_entropy
 
-        # 9. Threat Signal Aggregation
+        # 9. Network & Infrastructure Intelligence
+        net_res = network_analyzer.analyze(
+            hostname=norm.hostname or domain,
+            port=port,
+            scheme=scheme
+        )
+
+        # 10. Threat Signal Aggregation
         signals: List[str] = []
         score = 0.0
 
@@ -495,8 +503,12 @@ class URLAnalyzer:
                 signals.append("Unauthorized or unregistered entity claiming '.bank.in' namespace")
                 score += 40.0
 
-            if ip_based:
-                signals.append("URL uses raw IP address instead of domain hostname (bypasses DNS reputation)")
+            # Network-layer signals: host is IP
+            if net_res.is_ip_host:
+                signals.append(
+                    f"ip_based_url: Host uses raw IP address instead of domain hostname ({domain}, {net_res.ip_version or 'IP'}) "
+                    f"disguising domain identity and bypassing domain-name reputation filters"
+                )
                 score += 35.0
 
             if has_at_symbol:
@@ -534,9 +546,26 @@ class URLAnalyzer:
                 elif entropy_res.is_high_domain_entropy:
                     score += 10.0
 
-            if port and port not in [80, 443]:
-                signals.append(f"URL uses non-standard network port (:{port})")
+            # Network-layer signals: unusual port, dns failure, multiple IPs
+            if net_res.is_unusual_port:
+                signals.append(
+                    f"unusual_port: URL targets non-standard network port (:{net_res.port}) "
+                    f"commonly used for phishing kits on compromised proxies"
+                )
                 score += 20.0
+
+            if net_res.dns_failure:
+                signals.append(
+                    f"dns_failure: Domain fails DNS resolution ({net_res.dns_error_message or 'NXDOMAIN'}) "
+                    f"indicating disposable, sinkholed, or unconfigured phishing infrastructure"
+                )
+                score += 15.0
+
+            if net_res.has_multiple_ips:
+                signals.append(
+                    f"multiple_ips: Host resolves to {len(net_res.resolved_ips)} distinct IP addresses "
+                    f"({', '.join(net_res.resolved_ips[:3])}) indicating multi-homed / Fast-Flux DNS routing"
+                )
 
             # Add brand impersonation and typosquatting signals
             if impersonated_brand:
@@ -650,6 +679,16 @@ class URLAnalyzer:
             has_double_slash=has_double_slash,
             has_hex_encoding=has_hex_encoding,
             has_homograph_attack=norm.has_homograph_attack,
+            network_analysis=net_res,
+            is_ip_host=net_res.is_ip_host,
+            dns_resolved=net_res.dns_resolved,
+            dns_failure=net_res.dns_failure,
+            ip_version=net_res.ip_version,
+            resolved_ips=net_res.resolved_ips,
+            has_multiple_ips=net_res.has_multiple_ips,
+            is_unusual_port=net_res.is_unusual_port,
+            asn=net_res.asn,
+            asn_org=net_res.asn_org,
             stripped_tracking_params=norm.stripped_tracking_params,
             threat_signals=signals,
             base_risk_score=base_risk_score

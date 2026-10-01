@@ -92,6 +92,26 @@ export interface EntropyAnalysis {
   evaluation_note?: string;
 }
 
+export interface NetworkAnalysis {
+  is_ip_host: boolean;
+  ip_version?: 'IPv4' | 'IPv6' | 'Dual-Stack' | null;
+  is_private_ip: boolean;
+  dns_resolved: boolean;
+  dns_failure: boolean;
+  dns_error_message?: string | null;
+  resolved_ips: string[];
+  resolved_ipv4: string[];
+  resolved_ipv6: string[];
+  has_multiple_ips: boolean;
+  port?: number | null;
+  is_unusual_port: boolean;
+  asn?: string | null;
+  asn_org?: string | null;
+  asn_country?: string | null;
+  signal_flags: string[];
+  signals: string[];
+}
+
 export interface LexicalFeatureVector {
   url_length: number;
   domain_length: number;
@@ -190,6 +210,16 @@ export interface URLFeatureAnalysis {
   has_double_slash: boolean;
   has_hex_encoding: boolean;
   has_homograph_attack?: boolean;
+  network_analysis?: NetworkAnalysis | null;
+  is_ip_host?: boolean;
+  dns_resolved?: boolean;
+  dns_failure?: boolean;
+  ip_version?: 'IPv4' | 'IPv6' | 'Dual-Stack' | null;
+  resolved_ips?: string[];
+  has_multiple_ips?: boolean;
+  is_unusual_port?: boolean;
+  asn?: string | null;
+  asn_org?: string | null;
   stripped_tracking_params?: string[];
   threat_signals: string[];
   base_risk_score: number;
@@ -222,6 +252,16 @@ export interface URLScanResponse {
   path_entropy?: number;
   query_entropy?: number;
   entropy_analysis?: EntropyAnalysis | null;
+  network_analysis?: NetworkAnalysis | null;
+  is_ip_host?: boolean;
+  dns_resolved?: boolean;
+  dns_failure?: boolean;
+  ip_version?: 'IPv4' | 'IPv6' | 'Dual-Stack' | null;
+  resolved_ips?: string[];
+  has_multiple_ips?: boolean;
+  is_unusual_port?: boolean;
+  asn?: string | null;
+  asn_org?: string | null;
   lexical_vector?: LexicalFeatureVector | null;
   brand_impersonated?: string | null;
   brand_display_name?: string | null;
