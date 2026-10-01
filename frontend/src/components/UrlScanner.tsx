@@ -9,7 +9,9 @@ import {
   AlertCircle,
   Copy,
   Sparkles,
-  RotateCcw
+  RotateCcw,
+  Check,
+  Info
 } from 'lucide-react';
 import type { URLScanResponse, RiskLevel } from '../types';
 import { scanUrl } from '../services/api';
@@ -645,6 +647,285 @@ export const UrlScanner = forwardRef<HTMLDivElement, UrlScannerProps>((_, ref) =
                         IP Host
                       </span>
                     )}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* STRUCTURED LEXICAL FEATURE VECTOR & SEMANTIC PATTERNS */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                  STRUCTURED LEXICAL FEATURE VECTOR:
+                </h4>
+                <span className="text-[11px] font-semibold text-slate-500 italic flex items-center gap-1">
+                  <Info size={13} className="text-slate-400" />
+                  A suspicious keyword is evidence, not proof
+                </span>
+              </div>
+
+              {/* SEMANTIC PATTERNS CHIPS */}
+              <div className="p-3.5 rounded-xl border border-[#BBD5DA] bg-[#F5F5F5] mb-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    SEMANTIC PATTERNS (SOCIAL ENGINEERING EVIDENCE)
+                  </span>
+                  {result.url_features?.semantic_patterns?.keyword_count ? (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-200">
+                      {result.url_features.semantic_patterns.keyword_count} detected
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-medium text-slate-400">0 detected</span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {(['login', 'verify', 'secure', 'account', 'update', 'kyc', 'wallet', 'payment', 'refund', 'bonus', 'claim', 'support'] as const).map((kw) => {
+                    const isDetected = Boolean(
+                      result.url_features?.semantic_patterns?.[kw] ??
+                      result.url_features?.suspicious_keywords?.some(k => k.toLowerCase().includes(kw))
+                    );
+                    return (
+                      <span
+                        key={kw}
+                        className={`text-xs font-mono px-2 py-0.5 rounded-md flex items-center gap-1 border transition-colors ${
+                          isDetected
+                            ? 'bg-amber-100 text-amber-950 font-bold border-amber-300 shadow-sm'
+                            : 'bg-white/80 text-slate-400 border-slate-200 font-normal'
+                        }`}
+                        title={isDetected ? `Semantic pattern '${kw}' detected in URL` : `Pattern '${kw}' not detected`}
+                      >
+                        {isDetected ? (
+                          <Check size={12} className="text-amber-700" />
+                        ) : (
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                        )}
+                        <span>{kw}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 20-FEATURE LEXICAL VECTOR GRID */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                {/* 1. url_length */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    url_length
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {result.url_features?.lexical_vector?.url_length ?? result.url_features.url_length}
+                  </p>
+                </div>
+
+                {/* 2. domain_length */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    domain_length
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {result.url_features?.lexical_vector?.domain_length ?? result.url_features.domain_length}
+                  </p>
+                </div>
+
+                {/* 3. subdomain_count */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    subdomain_count
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {result.url_features?.lexical_vector?.subdomain_count ?? result.url_features.subdomain_count}
+                  </p>
+                </div>
+
+                {/* 4. subdomain_depth */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    subdomain_depth
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {result.url_features?.lexical_vector?.subdomain_depth ?? result.url_features.subdomain_depth ?? 0}
+                  </p>
+                </div>
+
+                {/* 5. path_length */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    path_length
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {result.url_features?.lexical_vector?.path_length ?? result.url_features.path_length ?? (result.url_features.path?.length || 0)}
+                  </p>
+                </div>
+
+                {/* 6. path_depth */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    path_depth
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {result.url_features?.lexical_vector?.path_depth ?? result.url_features.path_depth ?? 0}
+                  </p>
+                </div>
+
+                {/* 7. query_length */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    query_length
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {result.url_features?.lexical_vector?.query_length ?? result.url_features.query_length ?? (result.url_features.query?.length || 0)}
+                  </p>
+                </div>
+
+                {/* 8. query_parameter_count */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    query_param_count
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {result.url_features?.lexical_vector?.query_parameter_count ?? result.url_features.query_parameter_count ?? 0}
+                  </p>
+                </div>
+
+                {/* 9. dot_count */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    dot_count
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {result.url_features?.lexical_vector?.dot_count ?? result.url_features.dot_count ?? 0}
+                  </p>
+                </div>
+
+                {/* 10. hyphen_count */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    hyphen_count
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {result.url_features?.lexical_vector?.hyphen_count ?? result.url_features.hyphen_count ?? 0}
+                  </p>
+                </div>
+
+                {/* 11. underscore_count */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    underscore_count
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {result.url_features?.lexical_vector?.underscore_count ?? result.url_features.underscore_count ?? 0}
+                  </p>
+                </div>
+
+                {/* 12. digit_count */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    digit_count
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {result.url_features?.lexical_vector?.digit_count ?? result.url_features.digit_count ?? 0}
+                  </p>
+                </div>
+
+                {/* 13. digit_ratio */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    digit_ratio
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {((result.url_features?.lexical_vector?.digit_ratio ?? result.url_features.digit_ratio ?? 0) * 100).toFixed(1)}%
+                  </p>
+                </div>
+
+                {/* 14. special_character_count */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    special_char_count
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {result.url_features?.lexical_vector?.special_character_count ?? result.url_features.special_char_count}
+                  </p>
+                </div>
+
+                {/* 15. special_character_ratio */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    special_char_ratio
+                  </span>
+                  <p className="font-mono text-xs font-bold text-slate-900">
+                    {((result.url_features?.lexical_vector?.special_character_ratio ?? result.url_features.special_character_ratio ?? 0) * 100).toFixed(1)}%
+                  </p>
+                </div>
+
+                {/* 16. has_ip_host */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    has_ip_host
+                  </span>
+                  <p className={`font-mono text-xs font-bold ${
+                    (result.url_features?.lexical_vector?.has_ip_host ?? result.url_features.ip_based)
+                      ? 'text-[#D10000]'
+                      : 'text-slate-700'
+                  }`}>
+                    {(result.url_features?.lexical_vector?.has_ip_host ?? result.url_features.ip_based) ? 'true' : 'false'}
+                  </p>
+                </div>
+
+                {/* 17. has_port */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    has_port
+                  </span>
+                  <p className={`font-mono text-xs font-bold ${
+                    (result.url_features?.lexical_vector?.has_port ?? result.url_features.has_port)
+                      ? 'text-amber-700'
+                      : 'text-slate-700'
+                  }`}>
+                    {(result.url_features?.lexical_vector?.has_port ?? result.url_features.has_port) ? 'true' : 'false'}
+                  </p>
+                </div>
+
+                {/* 18. has_at_symbol */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    has_at_symbol
+                  </span>
+                  <p className={`font-mono text-xs font-bold ${
+                    (result.url_features?.lexical_vector?.has_at_symbol ?? result.url_features.has_at_symbol)
+                      ? 'text-[#D10000]'
+                      : 'text-slate-700'
+                  }`}>
+                    {(result.url_features?.lexical_vector?.has_at_symbol ?? result.url_features.has_at_symbol) ? 'true' : 'false'}
+                  </p>
+                </div>
+
+                {/* 19. has_punycode */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    has_punycode
+                  </span>
+                  <p className={`font-mono text-xs font-bold ${
+                    (result.url_features?.lexical_vector?.has_punycode ?? result.url_features.has_punycode)
+                      ? 'text-amber-700'
+                      : 'text-slate-700'
+                  }`}>
+                    {(result.url_features?.lexical_vector?.has_punycode ?? result.url_features.has_punycode) ? 'true' : 'false'}
+                  </p>
+                </div>
+
+                {/* 20. has_percent_encoding */}
+                <div className="p-2.5 rounded-lg border border-[#BBD5DA] bg-white">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    has_percent_encoding
+                  </span>
+                  <p className={`font-mono text-xs font-bold ${
+                    (result.url_features?.lexical_vector?.has_percent_encoding ?? result.url_features.has_hex_encoding)
+                      ? 'text-amber-700'
+                      : 'text-slate-700'
+                  }`}>
+                    {(result.url_features?.lexical_vector?.has_percent_encoding ?? result.url_features.has_hex_encoding) ? 'true' : 'false'}
                   </p>
                 </div>
               </div>

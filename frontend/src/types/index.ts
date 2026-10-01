@@ -57,6 +57,50 @@ export interface BrandAnalysisDetails {
   summary?: string | null;
 }
 
+export interface SemanticPatterns {
+  login: boolean;
+  verify: boolean;
+  secure: boolean;
+  account: boolean;
+  update: boolean;
+  kyc: boolean;
+  wallet: boolean;
+  payment: boolean;
+  refund: boolean;
+  bonus: boolean;
+  claim: boolean;
+  support: boolean;
+  found_keywords: string[];
+  keyword_count: number;
+  keyword_evidence_weight: number;
+  evidence_note: string;
+}
+
+export interface LexicalFeatureVector {
+  url_length: number;
+  domain_length: number;
+  subdomain_count: number;
+  path_length: number;
+  query_length: number;
+  dot_count: number;
+  hyphen_count: number;
+  underscore_count: number;
+  digit_count: number;
+  special_character_count: number;
+  digit_ratio: number;
+  special_character_ratio: number;
+  subdomain_depth: number;
+  path_depth: number;
+  query_parameter_count: number;
+  has_ip_host: boolean;
+  has_port: boolean;
+  has_at_symbol: boolean;
+  has_punycode: boolean;
+  has_percent_encoding: boolean;
+  semantic_patterns: SemanticPatterns;
+  evidence_summary: string;
+}
+
 export interface URLFeatureAnalysis {
   url: string;
   original_url?: string;
@@ -87,10 +131,27 @@ export interface URLFeatureAnalysis {
   domain_length: number;
   subdomain_count: number;
   special_char_count: number;
+  path_length?: number;
+  query_length?: number;
+  dot_count?: number;
+  hyphen_count?: number;
+  underscore_count?: number;
+  digit_count?: number;
+  digit_ratio?: number;
+  special_character_ratio?: number;
+  subdomain_depth?: number;
+  path_depth?: number;
+  query_parameter_count?: number;
+  has_ip_host?: boolean;
+  has_port?: boolean;
+  has_punycode?: boolean;
+  has_percent_encoding?: boolean;
   entropy: number;
   suspicious_tld: boolean;
   detected_tld: string;
   suspicious_keywords: string[];
+  semantic_patterns?: SemanticPatterns | null;
+  lexical_vector?: LexicalFeatureVector | null;
   brand_impersonated?: string | null;
   brand_display_name?: string | null;
   brand_similarity_score: number;
@@ -132,6 +193,7 @@ export interface URLScanResponse {
   detected_scripts?: string[];
   homograph_summary?: string;
   homograph_analysis?: HomographAnalysis;
+  lexical_vector?: LexicalFeatureVector | null;
   brand_impersonated?: string | null;
   brand_display_name?: string | null;
   brand_similarity_score?: number;

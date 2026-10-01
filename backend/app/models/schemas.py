@@ -59,6 +59,52 @@ class BrandAnalysisDetails(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class SemanticPatterns(BaseModel):
+    login: bool = False
+    verify: bool = False
+    secure: bool = False
+    account: bool = False
+    update: bool = False
+    kyc: bool = False
+    wallet: bool = False
+    payment: bool = False
+    refund: bool = False
+    bonus: bool = False
+    claim: bool = False
+    support: bool = False
+    found_keywords: List[str] = Field(default_factory=list)
+    keyword_count: int = 0
+    keyword_evidence_weight: float = 0.0
+    evidence_note: str = "A suspicious keyword is evidence, not proof"
+
+    model_config = ConfigDict(from_attributes=True)
+
+class LexicalFeatureVector(BaseModel):
+    url_length: int
+    domain_length: int
+    subdomain_count: int
+    path_length: int
+    query_length: int
+    dot_count: int
+    hyphen_count: int
+    underscore_count: int
+    digit_count: int
+    special_character_count: int
+    digit_ratio: float
+    special_character_ratio: float
+    subdomain_depth: int
+    path_depth: int
+    query_parameter_count: int
+    has_ip_host: bool
+    has_port: bool
+    has_at_symbol: bool
+    has_punycode: bool
+    has_percent_encoding: bool
+    semantic_patterns: SemanticPatterns
+    evidence_summary: str = "A suspicious keyword is evidence, not proof"
+
+    model_config = ConfigDict(from_attributes=True)
+
 class URLFeatureAnalysis(BaseModel):
     url: str
     original_url: Optional[str] = None
@@ -89,10 +135,27 @@ class URLFeatureAnalysis(BaseModel):
     domain_length: int
     subdomain_count: int
     special_char_count: int
+    path_length: int = 0
+    query_length: int = 0
+    dot_count: int = 0
+    hyphen_count: int = 0
+    underscore_count: int = 0
+    digit_count: int = 0
+    digit_ratio: float = 0.0
+    special_character_ratio: float = 0.0
+    subdomain_depth: int = 0
+    path_depth: int = 0
+    query_parameter_count: int = 0
+    has_ip_host: bool = False
+    has_port: bool = False
+    has_punycode: bool = False
+    has_percent_encoding: bool = False
     entropy: float
     suspicious_tld: bool
     detected_tld: str
     suspicious_keywords: List[str] = Field(default_factory=list)
+    semantic_patterns: Optional[SemanticPatterns] = None
+    lexical_vector: Optional[LexicalFeatureVector] = None
     brand_impersonated: Optional[str] = None
     brand_similarity_score: float = 0.0
     brand_similarity_rating: str = "NONE"
@@ -137,6 +200,7 @@ class URLScanResponse(BaseModel):
     detected_scripts: List[str] = Field(default_factory=list)
     homograph_summary: Optional[str] = None
     homograph_analysis: Optional[HomographAnalysis] = None
+    lexical_vector: Optional[LexicalFeatureVector] = None
     brand_impersonated: Optional[str] = None
     brand_similarity_score: float = 0.0
     brand_similarity_rating: str = "NONE"

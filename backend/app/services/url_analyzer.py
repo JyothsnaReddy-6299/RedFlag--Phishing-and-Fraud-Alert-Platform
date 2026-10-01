@@ -1,9 +1,10 @@
 import math
 import re
 from typing import List, Tuple, Optional, Dict
-from app.models.schemas import URLFeatureAnalysis, URLComponents, HomographAnalysis, BrandAnalysisDetails
+from app.models.schemas import URLFeatureAnalysis, URLComponents, HomographAnalysis, BrandAnalysisDetails, LexicalFeatureVector, SemanticPatterns
 from app.services.url_normalizer import url_normalizer, URLComponents as URLComponentsData
 from app.services.brand_matcher import brand_matcher, BrandMatchResult
+from app.services.lexical_analyzer import lexical_analyzer
 
 SUSPICIOUS_TLDS = {
     "xyz", "top", "club", "work", "click", "buzz", "rest", "cam", "live",
@@ -335,28 +336,40 @@ class URLAnalyzer:
         if not is_official and norm.hostname != domain:
             is_official, official_brand = self.check_official_domain(norm.hostname)
 
-        # 1. IP-based Host detection
-        ip_based = norm.is_ip_address or bool(self.ip_pattern.match(full_url))
+        # 1. Structured Lexical Feature Vector & Semantic Pattern Analysis
+        lexical_vec = lexical_analyzer.extract_vector(
+            full_url=full_url,
+            domain=domain,
+            subdomain=subdomain,
+            path=norm.path,
+            query=query,
+            port=port,
+            is_ip_host=norm.is_ip_address,
+            original_url=norm.original_url
+        )
 
-        # 2. Subdomains
-        subdomain_count = len(subdomain.split(".")) if subdomain else 0
+        ip_based = lexical_vec.has_ip_host
+        subdomain_count = lexical_vec.subdomain_count
+        special_char_count = lexical_vec.special_character_count
+        has_at_symbol = lexical_vec.has_at_symbol
+        has_hex_encoding = lexical_vec.has_percent_encoding
 
-        # 3. TLD
+        # Double slash detection in path
+        orig_body = norm.original_url.split("://", 1)[-1] if "://" in norm.original_url else norm.original_url
+        has_double_slash = "//" in orig_body
+
+        # 2. TLD Analysis
         suspicious_tld = tld in SUSPICIOUS_TLDS or ("." in tld and tld.split(".")[-1] in SUSPICIOUS_TLDS)
 
-        # 4. Special Characters & Obfuscation
-        special_chars = set("@-_~%&=?")
-        special_char_count = sum(1 for c in full_url if c in special_chars)
-        orig_body = norm.original_url.split("://", 1)[-1] if "://" in norm.original_url else norm.original_url
-        has_at_symbol = "@" in norm.original_url
-        has_double_slash = "//" in orig_body
-        has_hex_encoding = bool(self.hex_encoding_pattern.search(norm.original_url))
-
-        # 5. Shannon Entropy
+        # 3. Shannon Entropy
         entropy = calculate_shannon_entropy(domain)
 
-        # 6. Sensitive keywords
-        found_keywords = [kw for kw in SUSPICIOUS_KEYWORDS if kw in full_url.lower() or kw in norm.original_url.lower()]
+        # 4. Semantic Keywords (Evidence, not proof)
+        found_keywords_set = set(lexical_vec.semantic_patterns.found_keywords)
+        for kw in SUSPICIOUS_KEYWORDS:
+            if kw in full_url.lower() or (norm.original_url and kw in norm.original_url.lower()):
+                found_keywords_set.add(kw)
+        found_keywords = sorted(list(found_keywords_set))
 
         # 7. Advanced Brand Impersonation check on Registered Domain (stem/SLD)
         impersonated_brand = None
@@ -511,11 +524,11 @@ class URLAnalyzer:
                     score += min(20.0, len(deceptive_tokens) * 8.0)
 
             if len(found_keywords) >= 2:
-                signals.append(f"Multiple social-engineering keywords in URL: {', '.join(found_keywords[:4])}")
-                score += min(30.0, len(found_keywords) * 8.0)
+                signals.append(f"Multiple social-engineering keywords in URL: {', '.join(found_keywords[:4])} (Evidence only — suspicious keywords are not standalone proof)")
+                score += min(25.0, len(found_keywords) * 6.0)
             elif len(found_keywords) == 1:
-                signals.append(f"Sensitive credential/banking keyword in URL: {found_keywords[0]}")
-                score += 10.0
+                signals.append(f"Sensitive credential/banking keyword in URL: {found_keywords[0]} (Evidence only — evaluated in context with domain reputation)")
+                score += 8.0
 
             if protocol == "http" and (impersonated_brand or len(found_keywords) > 0):
                 signals.append("Insecure HTTP protocol used for sensitive banking or login interaction")
@@ -574,10 +587,27 @@ class URLAnalyzer:
             domain_length=len(norm.canonical_domain),
             subdomain_count=subdomain_count,
             special_char_count=special_char_count,
+            path_length=lexical_vec.path_length,
+            query_length=lexical_vec.query_length,
+            dot_count=lexical_vec.dot_count,
+            hyphen_count=lexical_vec.hyphen_count,
+            underscore_count=lexical_vec.underscore_count,
+            digit_count=lexical_vec.digit_count,
+            digit_ratio=lexical_vec.digit_ratio,
+            special_character_ratio=lexical_vec.special_character_ratio,
+            subdomain_depth=lexical_vec.subdomain_depth,
+            path_depth=lexical_vec.path_depth,
+            query_parameter_count=lexical_vec.query_parameter_count,
+            has_ip_host=lexical_vec.has_ip_host,
+            has_port=lexical_vec.has_port,
+            has_punycode=lexical_vec.has_punycode,
+            has_percent_encoding=lexical_vec.has_percent_encoding,
             entropy=entropy,
             suspicious_tld=suspicious_tld,
             detected_tld=tld,
             suspicious_keywords=found_keywords,
+            semantic_patterns=lexical_vec.semantic_patterns,
+            lexical_vector=lexical_vec,
             brand_impersonated=impersonated_brand,
             brand_similarity_score=similarity_score,
             brand_similarity_rating=similarity_rating,
