@@ -112,6 +112,19 @@ export interface NetworkAnalysis {
   signals: string[];
 }
 
+export interface ShortenerAnalysis {
+  is_shortened: boolean;
+  shortener_domain?: string | null;
+  original_url: string;
+  destination_url?: string | null;
+  destination_domain?: string | null;
+  redirect_chain: string[];
+  hop_count: number;
+  resolved_successfully: boolean;
+  error_message?: string | null;
+  signals: string[];
+}
+
 export interface LexicalFeatureVector {
   url_length: number;
   domain_length: number;
@@ -220,6 +233,12 @@ export interface URLFeatureAnalysis {
   is_unusual_port?: boolean;
   asn?: string | null;
   asn_org?: string | null;
+  is_shortened_url?: boolean;
+  shortener_domain?: string | null;
+  destination_url?: string | null;
+  destination_domain?: string | null;
+  redirect_chain?: string[];
+  shortener_analysis?: ShortenerAnalysis | null;
   stripped_tracking_params?: string[];
   threat_signals: string[];
   base_risk_score: number;
@@ -262,6 +281,12 @@ export interface URLScanResponse {
   is_unusual_port?: boolean;
   asn?: string | null;
   asn_org?: string | null;
+  is_shortened_url?: boolean;
+  shortener_domain?: string | null;
+  destination_url?: string | null;
+  destination_domain?: string | null;
+  redirect_chain?: string[];
+  shortener_analysis?: ShortenerAnalysis | null;
   lexical_vector?: LexicalFeatureVector | null;
   brand_impersonated?: string | null;
   brand_display_name?: string | null;

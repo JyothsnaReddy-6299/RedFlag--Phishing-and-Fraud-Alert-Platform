@@ -3,13 +3,15 @@ import re
 from typing import List, Tuple, Optional, Dict
 from app.models.schemas import (
     URLFeatureAnalysis, URLComponents, HomographAnalysis, BrandAnalysisDetails,
-    LexicalFeatureVector, SemanticPatterns, EntropyAnalysis, NetworkAnalysis
+    LexicalFeatureVector, SemanticPatterns, EntropyAnalysis, NetworkAnalysis,
+    ShortenerAnalysis
 )
 from app.services.url_normalizer import url_normalizer, URLComponents as URLComponentsData
 from app.services.brand_matcher import brand_matcher, BrandMatchResult
 from app.services.lexical_analyzer import lexical_analyzer
 from app.services.entropy_analyzer import entropy_analyzer, calculate_shannon_entropy
 from app.services.network_analyzer import network_analyzer
+from app.services.url_expander import url_expander
 
 SUSPICIOUS_TLDS = {
     "xyz", "top", "club", "work", "click", "buzz", "rest", "cam", "live",
@@ -315,9 +317,27 @@ class URLAnalyzer:
 
         return (None, 0.0, [])
 
-    def analyze(self, raw_url: str) -> URLFeatureAnalysis:
-        # 0. RFC-compliant URL Normalization & 8-Part Decomposition Layer
-        norm = url_normalizer.normalize(raw_url)
+    def analyze(
+        self,
+        raw_url: str,
+        override_destination: Optional[str] = None,
+        override_chain: Optional[List[str]] = None
+    ) -> URLFeatureAnalysis:
+        # 0. Identify Shortened-Link Patterns & Resolve Destination
+        # short URL -> resolve destination -> analyze final URL -> keep original + final URL in evidence
+        shortener_res = url_expander.expand(
+            raw_url,
+            override_destination=override_destination,
+            override_chain=override_chain
+        )
+        target_analysis_url = (
+            shortener_res.destination_url
+            if (shortener_res.is_shortened and shortener_res.destination_url)
+            else raw_url
+        )
+
+        # 1. RFC-compliant URL Normalization & 8-Part Decomposition Layer on final destination URL
+        norm = url_normalizer.normalize(target_analysis_url)
         full_url = norm.normalized_url
         domain = norm.canonical_domain
         subdomain = norm.subdomain
@@ -587,6 +607,12 @@ class URLAnalyzer:
                 signals.append("Insecure HTTP protocol used for sensitive banking or login interaction")
                 score += 15.0
 
+            # Shortened link cloaking / masking evasion
+            if shortener_res.is_shortened:
+                signals.extend(shortener_res.signals)
+                if not is_official:
+                    score += 20.0
+
             base_risk_score = min(100.0, max(0.0, round(score, 1)))
 
         components_model = URLComponents(
@@ -612,7 +638,7 @@ class URLAnalyzer:
 
         return URLFeatureAnalysis(
             url=norm.normalized_url,
-            original_url=norm.original_url,
+            original_url=raw_url,
             normalized_url=norm.normalized_url,
             domain=norm.canonical_domain,
             canonical_domain=norm.canonical_domain,
@@ -689,6 +715,12 @@ class URLAnalyzer:
             is_unusual_port=net_res.is_unusual_port,
             asn=net_res.asn,
             asn_org=net_res.asn_org,
+            is_shortened_url=shortener_res.is_shortened,
+            shortener_domain=shortener_res.shortener_domain,
+            destination_url=shortener_res.destination_url,
+            destination_domain=shortener_res.destination_domain,
+            redirect_chain=shortener_res.redirect_chain,
+            shortener_analysis=shortener_res,
             stripped_tracking_params=norm.stripped_tracking_params,
             threat_signals=signals,
             base_risk_score=base_risk_score

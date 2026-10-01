@@ -120,6 +120,20 @@ class NetworkAnalysis(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class ShortenerAnalysis(BaseModel):
+    is_shortened: bool = False
+    shortener_domain: Optional[str] = None
+    original_url: str
+    destination_url: Optional[str] = None
+    destination_domain: Optional[str] = None
+    redirect_chain: List[str] = Field(default_factory=list)
+    hop_count: int = 0
+    resolved_successfully: bool = False
+    error_message: Optional[str] = None
+    signals: List[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
 class LexicalFeatureVector(BaseModel):
     url_length: int
     domain_length: int
@@ -228,6 +242,12 @@ class URLFeatureAnalysis(BaseModel):
     is_unusual_port: bool = False
     asn: Optional[str] = None
     asn_org: Optional[str] = None
+    is_shortened_url: bool = False
+    shortener_domain: Optional[str] = None
+    destination_url: Optional[str] = None
+    destination_domain: Optional[str] = None
+    redirect_chain: List[str] = Field(default_factory=list)
+    shortener_analysis: Optional[ShortenerAnalysis] = None
     stripped_tracking_params: List[str] = Field(default_factory=list)
     threat_signals: List[str] = Field(default_factory=list)
     base_risk_score: float = 0.0
@@ -274,6 +294,12 @@ class URLScanResponse(BaseModel):
     is_unusual_port: Optional[bool] = None
     asn: Optional[str] = None
     asn_org: Optional[str] = None
+    is_shortened_url: Optional[bool] = None
+    shortener_domain: Optional[str] = None
+    destination_url: Optional[str] = None
+    destination_domain: Optional[str] = None
+    redirect_chain: List[str] = Field(default_factory=list)
+    shortener_analysis: Optional[ShortenerAnalysis] = None
     lexical_vector: Optional[LexicalFeatureVector] = None
     brand_impersonated: Optional[str] = None
     brand_similarity_score: float = 0.0

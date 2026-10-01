@@ -12,7 +12,10 @@ import {
   RotateCcw,
   Check,
   Info,
-  Network
+  Network,
+  ArrowRight,
+  ArrowRightLeft,
+  Link2
 } from 'lucide-react';
 import type { URLScanResponse, RiskLevel } from '../types';
 import { scanUrl } from '../services/api';
@@ -436,6 +439,62 @@ export const UrlScanner = forwardRef<HTMLDivElement, UrlScannerProps>((_, ref) =
                 </div>
               </div>
             </div>
+
+            {/* SHORTENED URL DETECTED & RESOLUTION BANNER */}
+            {(result.is_shortened_url || result.url_features?.is_shortened_url) && (
+              <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border-2 border-amber-300 mb-6 shadow-sm">
+                <div className="flex items-start gap-3.5">
+                  <div className="p-2.5 rounded-xl bg-amber-100 text-amber-900 shrink-0 mt-0.5">
+                    <ArrowRightLeft size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                      <span className="text-xs font-black uppercase tracking-wider text-amber-950 bg-amber-200 px-2 py-0.5 rounded">
+                        Shortened URL detected
+                      </span>
+                      <span className="text-xs text-amber-800 font-semibold flex items-center gap-1">
+                        <Link2 size={13} />
+                        via {result.shortener_domain || result.url_features?.shortener_domain || 'Link Shortener'}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-700 mb-3">
+                      Attackers frequently weaponize link shorteners to disguise deceptive destinations. RedFlag followed the redirection chain and analyzed the final destination:
+                    </p>
+
+                    {/* Short Link -> Destination Trail */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-xs font-mono">
+                      <div className="bg-white p-2.5 rounded-xl border border-amber-200/90 text-slate-700 min-w-0 flex-1">
+                        <span className="text-slate-400 block text-[9px] font-sans font-bold uppercase mb-0.5">
+                          Original Short URL
+                        </span>
+                        <span className="truncate block text-slate-800 font-medium" title={result.original_url || result.url}>
+                          {result.original_url || result.url}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-center shrink-0 text-amber-600">
+                        <ArrowRight size={18} className="hidden sm:block" />
+                        <span className="sm:hidden text-xs text-amber-700 font-bold font-sans">↓ expands to</span>
+                      </div>
+
+                      <div className="bg-white p-2.5 rounded-xl border-2 border-amber-400 text-slate-900 min-w-0 flex-1 shadow-xs">
+                        <span className="text-amber-800 block text-[9px] font-sans font-black uppercase mb-0.5 flex items-center justify-between">
+                          <span>Final destination:</span>
+                          <span className="bg-amber-100 text-amber-900 text-[8px] px-1 rounded uppercase">Analyzed</span>
+                        </span>
+                        <span className="truncate block font-bold text-[#D10000]" title={result.destination_url || result.url_features?.destination_url || result.url}>
+                          {result.destination_domain || result.url_features?.destination_domain || result.domain}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-normal truncate block mt-0.5">
+                          {result.destination_url || result.url_features?.destination_url || result.url}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* 8-PART URL ARCHITECTURAL DECOMPOSITION */}
             <div className="mb-6">

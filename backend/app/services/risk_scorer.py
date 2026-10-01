@@ -54,6 +54,12 @@ class URLRiskScorer:
                 is_unusual_port=features.is_unusual_port,
                 asn=features.asn,
                 asn_org=features.asn_org,
+                is_shortened_url=features.is_shortened_url,
+                shortener_domain=features.shortener_domain,
+                destination_url=features.destination_url,
+                destination_domain=features.destination_domain,
+                redirect_chain=features.redirect_chain,
+                shortener_analysis=features.shortener_analysis,
                 lexical_vector=features.lexical_vector,
                 stripped_tracking_params=features.stripped_tracking_params,
                 risk_score=0,
@@ -152,6 +158,10 @@ class URLRiskScorer:
             factors.append(f"Non-Standard Port: Targets network port :{features.port}")
             advice.append(f"URL targets non-standard network port :{features.port}. Legitimate banking and consumer portals run on standard HTTPS (:443).")
 
+        if features.is_shortened_url:
+            factors.append(f"Shortened URL Masking: Uses {features.shortener_domain or 'link shortener'} to conceal final destination ({features.destination_domain or features.domain})")
+            advice.append(f"Shortened URL detected. The link expands to '{features.destination_domain or features.domain}'. Always verify the destination before providing credentials.")
+
         return URLScanResponse(
             url=features.url,
             original_url=features.original_url or features.url,
@@ -196,6 +206,12 @@ class URLRiskScorer:
             is_unusual_port=features.is_unusual_port,
             asn=features.asn,
             asn_org=features.asn_org,
+            is_shortened_url=features.is_shortened_url,
+            shortener_domain=features.shortener_domain,
+            destination_url=features.destination_url,
+            destination_domain=features.destination_domain,
+            redirect_chain=features.redirect_chain,
+            shortener_analysis=features.shortener_analysis,
             lexical_vector=features.lexical_vector,
             stripped_tracking_params=features.stripped_tracking_params,
             risk_score=final_score,
