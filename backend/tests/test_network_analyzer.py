@@ -1,12 +1,12 @@
 import pytest
-from backend.app.services.network_analyzer import (
+from app.services.network_analyzer import (
     network_analyzer,
     check_is_ip_address,
     check_is_unusual_port,
     lookup_asn_info
 )
-from backend.app.services.url_analyzer import url_analyzer
-from backend.app.services.risk_scorer import url_risk_scorer
+from app.services.url_analyzer import url_analyzer
+from app.services.risk_scorer import url_risk_scorer
 
 
 def test_check_is_ip_address():

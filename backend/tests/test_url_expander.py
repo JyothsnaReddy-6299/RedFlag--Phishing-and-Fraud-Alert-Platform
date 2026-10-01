@@ -1,11 +1,12 @@
 import pytest
-from backend.app.services.url_expander import (
+from app.services.url_expander import (
     url_expander,
     is_shortened_url_candidate,
     KNOWN_SHORTENER_DOMAINS
 )
-from backend.app.services.url_analyzer import url_analyzer
-from backend.app.services.risk_scorer import url_risk_scorer
+from app.services.url_analyzer import url_analyzer
+from app.services.risk_scorer import url_risk_scorer
+
 
 
 def test_is_shortened_url_candidate():

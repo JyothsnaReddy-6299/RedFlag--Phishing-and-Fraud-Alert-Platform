@@ -56,7 +56,7 @@ class SemanticPatterns(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-from backend.app.services.entropy_analyzer import calculate_shannon_entropy
+from app.services.entropy_analyzer import calculate_shannon_entropy
 
 
 class LexicalFeatureVector(BaseModel):

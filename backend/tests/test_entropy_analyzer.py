@@ -1,7 +1,7 @@
 import pytest
-from backend.app.services.entropy_analyzer import calculate_shannon_entropy, entropy_analyzer
-from backend.app.services.url_analyzer import url_analyzer
-from backend.app.services.risk_scorer import url_risk_scorer
+from app.services.entropy_analyzer import calculate_shannon_entropy, entropy_analyzer
+from app.services.url_analyzer import url_analyzer
+from app.services.risk_scorer import url_risk_scorer
 
 
 def test_calculate_shannon_entropy_basics():

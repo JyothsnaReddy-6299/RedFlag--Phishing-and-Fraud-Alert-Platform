@@ -23,7 +23,7 @@ from typing import Optional, List, Tuple, Set
 from urllib.parse import urlparse
 import httpx
 
-from backend.app.models.schemas import ShortenerAnalysis
+from app.models.schemas import ShortenerAnalysis
 
 
 # Known common URL shortener domains

@@ -22,7 +22,7 @@ import concurrent.futures
 from typing import Optional, List, Tuple, Dict
 import httpx
 
-from backend.app.models.schemas import NetworkAnalysis
+from app.models.schemas import NetworkAnalysis
 
 
 # In-memory local cache for ASN lookups to prevent duplicate network calls
