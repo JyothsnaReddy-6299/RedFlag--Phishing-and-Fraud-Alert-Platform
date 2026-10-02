@@ -1,20 +1,64 @@
+# ---------------------------------------------------------------------------
+# RedFlag — Render blueprint.
+#
+# Docker is used rather than the native Python runtime because the native
+# runtime cannot apt-get install Tesseract (OCR) and zbar (QR). With Docker
+# all four input modes work in production; without it, two of them would
+# permanently report "degraded" in /api/health.
+#
+# Deploy: Render dashboard -> New -> Blueprint -> pick this repo.
+# ---------------------------------------------------------------------------
 services:
   - type: web
     name: redflag-platform
-    env: python
+    runtime: docker
+    dockerfilePath: ./Dockerfile
     plan: free
-    buildCommand: chmod +x build.sh && ./build.sh
-    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.9
       - key: PROJECT_NAME
         value: "RedFlag Threat Intelligence Platform"
-      # SQLite is fine for the demo. For persistence across deploys, attach a
-      # managed Postgres and set REDFLAG_DATABASE_URL instead.
+
+      # SQLite is fine for a hackathon demo: the image is seeded at build time,
+      # so every deploy starts from an identical, repeatable dashboard.
+      #
+      # IMPORTANT: Render's free tier has an ephemeral filesystem. Reports
+      # submitted by judges during a live demo are lost when the instance
+      # restarts or spins down after 15 minutes idle. For persistence, either
+      # attach a disk (paid) or uncomment the Postgres block at the bottom of
+      # this file and switch REDFLAG_DATABASE_URL to fromDatabase.
       - key: REDFLAG_DATABASE_URL
-        value: "sqlite:///./redflag.db"
+        value: "sqlite:////app/backend/redflag.db"
+
+      # Abuse prevention. Tighten these if the demo URL is shared publicly.
       - key: REDFLAG_RATE_ANALYZE
         value: "30"
       - key: REDFLAG_RATE_REPORT
         value: "10"
+      - key: REDFLAG_RATE_READ
+        value: "240"
+      - key: REDFLAG_MAX_UPLOAD_BYTES
+        value: "8388608"
+
+      # Same-origin in production (one service serves API + UI), so CORS can
+      # stay closed. Only widen this if you add a separate frontend host.
+      - key: BACKEND_CORS_ORIGINS
+        value: '["https://redflag-platform.onrender.com"]'
+
+# ---------------------------------------------------------------------------
+# Optional: persistent Postgres instead of ephemeral SQLite.
+# Uncomment this block, and replace the REDFLAG_DATABASE_URL entry above with:
+#
+#      - key: REDFLAG_DATABASE_URL
+#        fromDatabase:
+#          name: redflag-db
+#          property: connectionString
+#
+# Also add `psycopg[binary]>=3.1` to requirements.txt.
+# ---------------------------------------------------------------------------
+# databases:
+#   - name: redflag-db
+#     plan: free
+#     databaseName: redflag
+#     user: redflag
