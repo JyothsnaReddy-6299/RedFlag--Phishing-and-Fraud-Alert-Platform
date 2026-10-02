@@ -14,3 +14,8 @@ dist-ssr/
 .DS_Store
 .idea/
 .vscode/
+
+# RedFlag generated artefacts
+backend/redflag.db
+backend/data/scam_clf.joblib
+backend/data/metrics.json

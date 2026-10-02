@@ -10,3 +10,11 @@ services:
         value: 3.11.9
       - key: PROJECT_NAME
         value: "RedFlag Threat Intelligence Platform"
+      # SQLite is fine for the demo. For persistence across deploys, attach a
+      # managed Postgres and set REDFLAG_DATABASE_URL instead.
+      - key: REDFLAG_DATABASE_URL
+        value: "sqlite:///./redflag.db"
+      - key: REDFLAG_RATE_ANALYZE
+        value: "30"
+      - key: REDFLAG_RATE_REPORT
+        value: "10"
