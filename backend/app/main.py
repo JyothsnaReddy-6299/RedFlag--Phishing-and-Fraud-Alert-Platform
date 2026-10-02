@@ -1,11 +1,24 @@
 import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
+from app.core.security import SecurityMiddleware
 from app.api import api_router
+from app.api.intel_routes import router as intel_router
+from app.intel import db as intel_db
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """Create tables if they do not exist. Idempotent and safe to re-run."""
+    intel_db.init_db()
+    yield
+
 
 app = FastAPI(
+    lifespan=lifespan,
     title=settings.PROJECT_NAME,
     version=settings.PROJECT_VERSION,
     description="RedFlag — Real-Time Malicious URL & Phishing Detection Platform.",
@@ -23,8 +36,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount API v1
+# Security: rate limits, body-size ceiling, safe errors, hardening headers
+app.add_middleware(SecurityMiddleware)
+
+# Mount API v1 (preserved baseline: /api/v1/scan/url, /scan/sms, /threats/known)
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Mount the RedFlag Intelligence API (unified multimodal contract endpoints)
+app.include_router(intel_router, prefix="/api")
+
 
 @app.get("/health", tags=["System"])
 def health_check():
@@ -32,7 +52,8 @@ def health_check():
         "status": "online",
         "service": settings.PROJECT_NAME,
         "version": settings.PROJECT_VERSION,
-        "focus": "Malicious Links & Phishing Detection Engine"
+        "focus": "Malicious Links & Phishing Detection Engine",
+        "intel_api": "/api/health"
     }
 
 # Mount Static frontend UI from frontend/dist (production React build) or frontend
