@@ -1,0 +1,154 @@
+{
+  "generated_at": "2026-10-02T07:57:39.149052+00:00",
+  "measured": true,
+  "dataset": {
+    "path": "data/validation.jsonl",
+    "samples": 124,
+    "provenance": "synthetic (data/build_dataset.py); train/test templates disjoint",
+    "classes": [
+      "delivery_scam",
+      "impersonation",
+      "job_investment",
+      "kyc_account_freeze",
+      "legitimate",
+      "lottery_prize",
+      "phishing_link",
+      "refund_cashback",
+      "remote_access_scam",
+      "utility_bill"
+    ]
+  },
+  "decision_threshold": 25,
+  "binary_scam_detection": {
+    "precision": 1.0,
+    "recall": 0.9352,
+    "f1": 0.9665,
+    "false_positive_rate": 0.0,
+    "true_positive": 101,
+    "false_positive": 0,
+    "true_negative": 16,
+    "false_negative": 7
+  },
+  "scam_category_accuracy": {
+    "value": 0.7407,
+    "correct": 80,
+    "total": 108
+  },
+  "per_class_accuracy": {
+    "delivery_scam": {
+      "n": 12,
+      "accuracy": 1.0
+    },
+    "impersonation": {
+      "n": 12,
+      "accuracy": 0.6667
+    },
+    "job_investment": {
+      "n": 12,
+      "accuracy": 1.0
+    },
+    "kyc_account_freeze": {
+      "n": 12,
+      "accuracy": 1.0
+    },
+    "legitimate": {
+      "n": 16,
+      "accuracy": 1.0
+    },
+    "lottery_prize": {
+      "n": 12,
+      "accuracy": 1.0
+    },
+    "phishing_link": {
+      "n": 12,
+      "accuracy": 1.0
+    },
+    "refund_cashback": {
+      "n": 12,
+      "accuracy": 0.75
+    },
+    "remote_access_scam": {
+      "n": 12,
+      "accuracy": 1.0
+    },
+    "utility_bill": {
+      "n": 12,
+      "accuracy": 1.0
+    }
+  },
+  "per_language_accuracy": {
+    "en": {
+      "n": 44,
+      "accuracy": 1.0
+    },
+    "ta": {
+      "n": 12,
+      "accuracy": 0.6667
+    },
+    "ta-en": {
+      "n": 68,
+      "accuracy": 0.9559
+    }
+  },
+  "explanation_coverage": 1.0,
+  "latency_ms": {
+    "p50": 33.8,
+    "p95": 189.0,
+    "max": 1168.2,
+    "note": "Backend analysis time only, measured on this host."
+  },
+  "ocr_accuracy": {
+    "value": null,
+    "status": "not measured",
+    "note": "No labeled screenshot set is shipped with this build."
+  },
+  "worst_cases": [
+    {
+      "kind": "false_negative",
+      "label": "impersonation",
+      "score": 23,
+      "text": "அரசு அறிவிப்பு: உங்கள் ஆதார் தவறாக பயன்படுத்தப்பட்டுள்ளது. நீதிமன்ற நோட்டீஸ். அதிகாரி 6383452190."
+    },
+    {
+      "kind": "false_negative",
+      "label": "refund_cashback",
+      "score": 15,
+      "text": "உங்கள் தோல்வியுற்ற பரிவர்த்தனைக்கான Rs.12,500 திரும்பப் பெற support.desk@okaxis கோரிக்கையை ஏற்கவும்."
+    },
+    {
+      "kind": "false_negative",
+      "label": "impersonation",
+      "score": 23,
+      "text": "அரசு அறிவிப்பு: உங்கள் ஆதார் தவறாக பயன்படுத்தப்பட்டுள்ளது. நீதிமன்ற நோட்டீஸ். அதிகாரி 8012345671."
+    },
+    {
+      "kind": "false_negative",
+      "label": "impersonation",
+      "score": 23,
+      "text": "அரசு அறிவிப்பு: உங்கள் ஆதார் தவறாக பயன்படுத்தப்பட்டுள்ளது. நீதிமன்ற நோட்டீஸ். அதிகாரி 7845612390."
+    },
+    {
+      "kind": "false_negative",
+      "label": "impersonation",
+      "score": 23,
+      "text": "அரசு அறிவிப்பு: உங்கள் ஆதார் தவறாக பயன்படுத்தப்பட்டுள்ளது. நீதிமன்ற நோட்டீஸ். அதிகாரி 9123456780."
+    },
+    {
+      "kind": "false_negative",
+      "label": "refund_cashback",
+      "score": 16,
+      "text": "உங்கள் தோல்வியுற்ற பரிவர்த்தனைக்கான Rs.4,999 திரும்பப் பெற winner2026@paytm கோரிக்கையை ஏற்கவும்."
+    },
+    {
+      "kind": "false_negative",
+      "label": "refund_cashback",
+      "score": 16,
+      "text": "உங்கள் தோல்வியுற்ற பரிவர்த்தனைக்கான Rs.2,00,000 திரும்பப் பெற refund.help@ybl கோரிக்கையை ஏற்கவும்."
+    }
+  ],
+  "caveats": [
+    "Measured on a small synthetic validation set, not on real victim data.",
+    "Community reputation and campaign boosts are disabled during evaluation, so live scores can be higher than these.",
+    "These numbers describe this dataset only and are not a guarantee of field performance."
+  ]
+}
